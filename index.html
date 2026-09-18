@@ -6,6 +6,7 @@
 <title>DevHub — Android каталог инструментов</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --radius-sm:10px; --radius-md:16px; --radius-lg:24px;
@@ -535,7 +536,8 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
     <div class="field"><label>Пароль</label><input id="authPass" type="password" placeholder="••••••••"></div>
     <div class="field" id="nameField" style="display:none;"><label>Имя</label><input id="authName" placeholder="Как вас называть"></div>
     <button class="btn btn-primary" id="authSubmit" style="width:100%; justify-content:center; padding:11px;">Войти</button>
-    <p class="notice">Аккаунт хранится в localStorage вашего браузера — реального сервера аутентификации у прототипа нет.</p>
+    <button class="btn btn-ghost" id="authTelegramBtn" style="width:100%; justify-content:center; padding:11px; margin-top:8px;">Войти через Telegram</button>
+    <p class="notice" id="authNotice">Аккаунт защищён Supabase Auth — данные хранятся на сервере, не в браузере.</p>
   </div>
 </div>
 
@@ -546,6 +548,12 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
 /* Сюда вписываешь URL своего Cloudflare Worker (шаг 4 инструкции).
    Пока тут пусто/localhost — заявки просто падают в локальный Outbox. */
    const REPORT_ENDPOINT = 'https://devhub-relay.cryptomail14dash.workers.dev';
+
+/* ===================== SUPABASE ===================== */
+/* Publishable key безопасен для браузера (используется вместе с RLS-политиками). */
+const SUPABASE_URL = 'https://nnuauvwjeiewituexgsj.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_H993QAi7e7uhkL_UfF-uRA_cDIHdcoM';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 /* ===================== DATA ===================== */
 const androidApps = [
@@ -734,7 +742,7 @@ document.getElementById('settingsSave').addEventListener('click', ()=>{
   closeModal('settingsBackdrop');
 });
 
-/* ===================== AUTH ===================== */
+/* ===================== AUTH (Supabase) ===================== */
 let authMode = 'login';
 document.querySelectorAll('#authTabs button').forEach(b=>{
   b.addEventListener('click', ()=>{
@@ -744,27 +752,103 @@ document.querySelectorAll('#authTabs button').forEach(b=>{
     document.getElementById('authSubmit').textContent = authMode==='register' ? 'Создать аккаунт' : 'Войти';
   });
 });
-document.getElementById('openAuthBtn').addEventListener('click', ()=>openModal('authBackdrop'));
-document.getElementById('footAuth').addEventListener('click', e=>{ e.preventDefault(); openModal('authBackdrop'); });
-document.getElementById('authSubmit').addEventListener('click', ()=>{
+
+/* Кнопка в топбаре/футере: если юзер не залогинен — открывает модалку входа,
+   если залогинен — по клику на аватар-чип спрашивает подтверждение выхода. */
+document.getElementById('openAuthBtn').addEventListener('click', ()=>{
+  if(currentUser){
+    if(confirm(`Выйти из аккаунта ${currentUser.email}?`)) signOutUser();
+  } else {
+    openModal('authBackdrop');
+  }
+});
+document.getElementById('footAuth').addEventListener('click', e=>{
+  e.preventDefault();
+  if(currentUser){
+    if(confirm(`Выйти из аккаунта ${currentUser.email}?`)) signOutUser();
+  } else {
+    openModal('authBackdrop');
+  }
+});
+
+document.getElementById('authSubmit').addEventListener('click', async ()=>{
   const email = document.getElementById('authEmail').value.trim();
   const pass = document.getElementById('authPass').value;
   if(!email || !pass){ showToast('Заполните email и пароль'); return; }
   const name = document.getElementById('authName').value.trim() || email.split('@')[0];
-  currentUser = {email, name};
-  try{ localStorage.setItem('devhub_account', JSON.stringify(currentUser)); }catch(e){}
-  updateAuthUI();
-  closeModal('authBackdrop');
-  showToast(authMode==='register' ? `Аккаунт создан, добро пожаловать, ${name}!` : `С возвращением, ${name}!`);
+  const submitBtn = document.getElementById('authSubmit');
+  submitBtn.disabled = true;
+  try{
+    if(authMode==='register'){
+      const { data, error } = await supabase.auth.signUp({
+        email, password: pass, options:{ data:{ full_name:name } }
+      });
+      if(error) throw error;
+      if(data.user && !data.session){
+        showToast('Проверьте почту — нужно подтвердить регистрацию');
+      } else {
+        showToast(`Аккаунт создан, добро пожаловать, ${name}!`);
+      }
+      closeModal('authBackdrop');
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      if(error) throw error;
+      const displayName = data.user?.user_metadata?.full_name || name;
+      showToast(`С возвращением, ${displayName}!`);
+      closeModal('authBackdrop');
+    }
+  } catch(err){
+    showToast('Ошибка: ' + (err.message || 'что-то пошло не так'));
+  } finally {
+    submitBtn.disabled = false;
+  }
 });
+
+document.getElementById('authTelegramBtn').addEventListener('click', ()=>{
+  showToast('Вход через Telegram подключим отдельным шагом — пока доступен вход по email');
+});
+
+async function signOutUser(){
+  await supabase.auth.signOut();
+  showToast('Вы вышли из аккаунта');
+}
+
 function updateAuthUI(){
   const btn = document.getElementById('openAuthBtn');
+  if(!btn) return;
   if(currentUser){
-    btn.outerHTML = `<div class="avatar-chip" id="openAuthBtn">${currentUser.name[0].toUpperCase()}&nbsp;${currentUser.name}</div>`;
-    document.getElementById('scopeAccountHint').textContent = 'вход выполнен';
+    btn.className = 'avatar-chip';
+    btn.innerHTML = `${currentUser.name[0].toUpperCase()}&nbsp;${currentUser.name}`;
+    const hint = document.getElementById('scopeAccountHint');
+    if(hint) hint.textContent = 'вход выполнен';
+  } else {
+    btn.className = 'btn btn-ghost';
+    btn.textContent = 'Войти';
+    const hint = document.getElementById('scopeAccountHint');
+    if(hint) hint.textContent = 'нужен вход';
   }
 }
-try{ const savedAcc = JSON.parse(localStorage.getItem('devhub_account')); if(savedAcc){ currentUser = savedAcc; } }catch(e){}
+
+function mapSupabaseUser(user){
+  if(!user) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    name: (user.user_metadata && user.user_metadata.full_name) || (user.email ? user.email.split('@')[0] : 'Пользователь')
+  };
+}
+
+/* Восстанавливаем сессию при загрузке страницы (Supabase сам хранит токен) */
+supabase.auth.getSession().then(({ data: { session } })=>{
+  currentUser = mapSupabaseUser(session?.user);
+  updateAuthUI();
+});
+
+/* Реагируем на вход/выход/обновление токена в реальном времени */
+supabase.auth.onAuthStateChange((_event, session)=>{
+  currentUser = mapSupabaseUser(session?.user);
+  updateAuthUI();
+});
 
 /* ===================== PROFILE EDITOR ===================== */
 document.querySelectorAll('#editorTabs button').forEach(b=>{
@@ -1046,7 +1130,6 @@ if(state.profile.bio) document.getElementById('pBio').value = state.profile.bio;
 if(state.profile.loc) document.getElementById('pLoc').value = state.profile.loc;
 document.getElementById('statDownloads').value = state.profile.statDownloads||0;
 document.getElementById('statSuggestions').value = state.profile.statSuggestions||0;
-if(currentUser) updateAuthUI();
 </script>
 </body>
 </html>

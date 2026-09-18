@@ -536,7 +536,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
     <div class="field"><label>Пароль</label><input id="authPass" type="password" placeholder="••••••••"></div>
     <div class="field" id="nameField" style="display:none;"><label>Имя</label><input id="authName" placeholder="Как вас называть"></div>
     <button class="btn btn-primary" id="authSubmit" style="width:100%; justify-content:center; padding:11px;">Войти</button>
-    <button class="btn btn-ghost" id="authTelegramBtn" style="width:100%; justify-content:center; padding:11px; margin-top:8px;">Войти через Telegram</button>
+    <div id="telegramLoginContainer" style="margin-top:10px; display:flex; justify-content:center; min-height:40px;"></div>
     <p class="notice" id="authNotice">Аккаунт защищён Supabase Auth — данные хранятся на сервере, не в браузере.</p>
   </div>
 </div>
@@ -818,9 +818,51 @@ document.getElementById('authSubmit').addEventListener('click', async ()=>{
   }
 });
 
-document.getElementById('authTelegramBtn').addEventListener('click', ()=>{
-  showToast('Вход через Telegram подключим отдельным шагом — пока доступен вход по email');
-});
+/* ===================== TELEGRAM LOGIN ===================== */
+const TELEGRAM_BOT_USERNAME = 'appsiteadmin_bot'; // без @
+
+/* Колбэк вызывает сам виджет Telegram, когда пользователь подтвердил вход в попапе */
+window.onTelegramAuth = async function(user){
+  try{
+    showToast('Проверяем вход через Telegram…');
+    const resp = await fetch(REPORT_ENDPOINT + '/auth/telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    });
+    let result = {};
+    try{ result = await resp.json(); }catch(e){}
+    if(!resp.ok || result.error){
+      showToast('Ошибка входа через Telegram: ' + (result.error || resp.status));
+      return;
+    }
+    if(!sbClient){ showToast('Сервис аккаунтов недоступен (не загрузился Supabase)'); return; }
+    const { error } = await sbClient.auth.verifyOtp({ token_hash: result.token_hash, type: 'email' });
+    if(error){ showToast('Ошибка Supabase: ' + error.message); return; }
+    closeModal('authBackdrop');
+    showToast('Вход через Telegram выполнен');
+  } catch(e){
+    console.error(e);
+    showToast('Не удалось войти через Telegram');
+  }
+};
+
+/* Встраиваем официальный Telegram Login Widget в контейнер модалки.
+   Виджет сам рисует кнопку и открывает попап авторизации Telegram,
+   после подтверждения вызывает window.onTelegramAuth(user) с данными и hash. */
+(function initTelegramWidget(){
+  const container = document.getElementById('telegramLoginContainer');
+  if(!container) return;
+  const s = document.createElement('script');
+  s.src = 'https://telegram.org/js/telegram-widget.js?22';
+  s.async = true;
+  s.setAttribute('data-telegram-login', TELEGRAM_BOT_USERNAME);
+  s.setAttribute('data-size', 'large');
+  s.setAttribute('data-radius', '10');
+  s.setAttribute('data-onauth', 'onTelegramAuth(user)');
+  s.setAttribute('data-request-access', 'write');
+  container.appendChild(s);
+})();
 
 async function signOutUser(){
   if(!sbClient){ showToast('Сервис аккаунтов недоступен'); return; }

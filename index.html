@@ -468,12 +468,19 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
         <div class="seg" id="reqType">
           <button class="on" data-type="add">Добавить</button>
           <button data-type="remove">Удалить</button>
+          <button data-type="bug_report">Сообщить об ошибке</button>
           <button data-type="complaint">Жалоба</button>
         </div>
         <br>
-        <div class="field"><label>Название приложения</label><input id="reqName" placeholder="Например, Acode"></div>
-        <div class="field"><label>Ссылка</label><input id="reqLink" placeholder="https://…"></div>
-        <div class="field"><label>Комментарий</label><textarea id="reqComment" placeholder="Опишите причину…"></textarea></div>
+        <div class="field" id="reqAppSelectWrap" style="display:none;">
+          <label>Приложение</label>
+          <select id="reqAppSelect"></select>
+        </div>
+        <div class="field" id="reqNameWrap"><label>Название приложения</label><input id="reqName" placeholder="Например, Acode"></div>
+        <div class="field" id="reqLinkWrap"><label>Ссылка</label><input id="reqLink" placeholder="https://…"></div>
+        <div class="field" id="reqCommentWrap"><label>Комментарий</label><textarea id="reqComment" placeholder="Опишите причину…"></textarea></div>
+        <div class="field" id="reqWhatWrongWrap" style="display:none;"><label>Что неправильно?</label><textarea id="reqWhatWrong" placeholder="Например: указана неверная версия Android"></textarea></div>
+        <div class="field" id="reqExpectedWrap" style="display:none;"><label>Как должно быть?</label><textarea id="reqExpected" placeholder="Правильная информация или предложение по исправлению"></textarea></div>
         <div class="field"><label>Контакт для ответа (необязательно)</label><input id="reqContact" placeholder="email или @telegram"></div>
         <button class="btn btn-primary" id="reqSubmit" style="width:100%; justify-content:center; padding:12px;">Отправить заявку</button>
         <p class="notice">Заявка уходит в Telegram-бота через серверный обработчик (токен бота хранится только на сервере, не в этом файле). Пока бэкенд не подключён — заявка сохраняется локально и видна во вкладке «Уведомления».</p>
@@ -609,6 +616,7 @@ async function loadCatalogFromSupabase(){
   });
 
   renderAndroid();
+  if(typeof fillReqAppSelect === 'function') fillReqAppSelect();
 }
 
 const bgOptions = [
@@ -683,6 +691,7 @@ function androidCardHTML(app){
         <select class="sel version-sel" data-app="${app.id}">${versionKeys.map(v=>`<option value="${v}">v${v}</option>`).join('')}</select>
         <a class="btn btn-primary btn-sm dl-btn" data-app="${app.id}" href="#">Скачать</a>
         <a class="vt-link" target="_blank" rel="noopener" href="https://www.virustotal.com/gui/search/${encodeURIComponent(app.name)}">🛡 VirusTotal ↗</a>
+        ${app.githubUrl ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${app.githubUrl}">🐙 GitHub / Исходный код</a>` : ''}
       </div>
     </div>
     <div class="arch-badges" data-archwrap="${app.id}">
@@ -1142,41 +1151,70 @@ function startBgEffect(type){
   draw();
 }
 
-/* ===================== REQUESTS -> OUTBOX (Telegram relay stub) ===================== */
+/* ===================== REQUESTS -> OUTBOX + Supabase + Telegram ===================== */
 let reqType = 'add';
+function updateReqFieldsVisibility(){
+  const isBug = reqType === 'bug_report';
+  document.getElementById('reqAppSelectWrap').style.display = isBug ? '' : 'none';
+  document.getElementById('reqNameWrap').style.display = isBug ? 'none' : '';
+  document.getElementById('reqLinkWrap').style.display = isBug ? 'none' : '';
+  document.getElementById('reqCommentWrap').style.display = isBug ? 'none' : '';
+  document.getElementById('reqWhatWrongWrap').style.display = isBug ? '' : 'none';
+  document.getElementById('reqExpectedWrap').style.display = isBug ? '' : 'none';
+}
+function fillReqAppSelect(){
+  const sel = document.getElementById('reqAppSelect');
+  if(!sel) return;
+  sel.innerHTML = androidApps.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+}
 document.querySelectorAll('#reqType button').forEach(b=>{
-  b.addEventListener('click', ()=>{ document.querySelectorAll('#reqType button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); reqType=b.dataset.type; });
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#reqType button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    reqType = b.dataset.type;
+    updateReqFieldsVisibility();
+    if(reqType === 'bug_report') fillReqAppSelect();
+  });
 });
-/*
-  ВАЖНО: токен Telegram-бота НИКОГДА не должен попадать в клиентский код.
-  Реальная схема:
-    1) fetch('/api/report', {method:'POST', body: JSON.stringify(payload)})
-    2) Сервер (Node / Cloudflare Worker / Vercel Function) берёт TELEGRAM_BOT_TOKEN
-       из переменных окружения и вызывает https://api.telegram.org/bot<TOKEN>/sendMessage
-    3) Сервер отвечает {ok:true} фронтенду.
-  GitHub Pages отдаёт только статику — /api/report там не заработает,
-  поэтому нужен отдельный маленький бэкенд (Worker/Function), см. пояснение в чате.
-*/
+updateReqFieldsVisibility();
+
 async function sendToBackend(payload){
   if(!REPORT_ENDPOINT || REPORT_ENDPOINT.includes('YOUR-WORKER-NAME')) return {ok:false};
   try{ const res = await fetch(REPORT_ENDPOINT, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}); if(!res.ok) throw 0; return {ok:true}; }
   catch(e){ return {ok:false}; }
 }
 document.getElementById('reqSubmit').addEventListener('click', async ()=>{
-  const name = document.getElementById('reqName').value.trim();
-  const link = document.getElementById('reqLink').value.trim();
-  const comment = document.getElementById('reqComment').value.trim();
+  const typeLabels = {add:'Добавить приложение', remove:'Удалить приложение', bug_report:'Сообщить об ошибке', complaint:'Жалоба'};
   const contact = document.getElementById('reqContact').value.trim();
-  if(!name){ showToast('Укажите название приложения'); return; }
-  const typeLabels = {add:'Добавить приложение', remove:'Удалить приложение', complaint:'Жалоба'};
-  const payload = {type:reqType, name, link, comment, contact, user: currentUser?currentUser.email:null, ts:Date.now()};
+  let payload, summaryTitle, summarySub;
+
+  if(reqType === 'bug_report'){
+    const appId = document.getElementById('reqAppSelect').value;
+    const app = androidApps.find(a=>a.id===appId);
+    const whatWrong = document.getElementById('reqWhatWrong').value.trim();
+    const expected = document.getElementById('reqExpected').value.trim();
+    if(!app){ showToast('Каталог ещё не загрузился — попробуйте через секунду'); return; }
+    if(!whatWrong){ showToast('Опишите, что именно неправильно'); return; }
+    payload = {type:'bug_report', appId, name:app.name, whatWrong, expected, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.email:null, ts:Date.now()};
+    summaryTitle = `${typeLabels.bug_report}: ${app.name}`;
+    summarySub = whatWrong;
+  } else {
+    const name = document.getElementById('reqName').value.trim();
+    const link = document.getElementById('reqLink').value.trim();
+    const comment = document.getElementById('reqComment').value.trim();
+    if(!name){ showToast('Укажите название приложения'); return; }
+    payload = {type:reqType, name, link, comment, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.email:null, ts:Date.now()};
+    summaryTitle = `${typeLabels[reqType]}: ${name}`;
+    summarySub = comment||link||'Без комментария';
+  }
+
   const result = await sendToBackend(payload);
-  outbox.unshift({title:`${typeLabels[reqType]}: ${name}`, sub: comment||link||'Без комментария', status: result.ok?'sent':'pending', time:new Date().toLocaleString('ru-RU')});
+  outbox.unshift({title:summaryTitle, sub: summarySub, status: result.ok?'sent':'pending', time:new Date().toLocaleString('ru-RU')});
   try{ localStorage.setItem('devhub_outbox', JSON.stringify(outbox.slice(0,50))); }catch(e){}
   state.profile.statSuggestions = (state.profile.statSuggestions||0) + 1;
   saveProfileLocal(); updatePreview();
-  showToast(result.ok ? 'Заявка отправлена в Telegram' : 'Бэкенд не подключён — заявка сохранена локально');
-  ['reqName','reqLink','reqComment','reqContact'].forEach(id=>document.getElementById(id).value='');
+  showToast(result.ok ? 'Заявка отправлена' : 'Не удалось отправить — заявка сохранена локально');
+  ['reqName','reqLink','reqComment','reqContact','reqWhatWrong','reqExpected'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   renderOutbox();
 });
 function renderOutbox(){

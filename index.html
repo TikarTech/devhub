@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="night">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevHub — Android каталог инструментов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --radius-sm:10px; --radius-md:16px; --radius-lg:24px;
+  --shadow:0 1px 2px rgba(0,0,0,.25), 0 20px 40px -20px rgba(0,0,0,.55);
+  --dur:.3s;
+}
+/* ============ THEMES ============ */
+html[data-theme="night"]{ --bg:#0A0B10; --bg2:#111319; --surface:#15171F; --surface2:#1B1E28; --border:#262A36; --text:#F2F3F9; --muted:#9498B2; --faint:#666B84; --primary:#8B7CFF; --primary-d:#7566F0; --primary-soft:#241F3D; --on-primary:#0A0B10; --star:#FFC65C; --a:#453BAA; --b:#8B7CFF; }
+html[data-theme="day"]{ --bg:#EDF0FA; --bg2:#F7F8FD; --surface:#FFFFFF; --surface2:#FBFBFF; --border:#E1E4F1; --text:#181B29; --muted:#666C85; --faint:#9498AC; --primary:#6D5DF6; --primary-d:#5747E4; --primary-soft:#ECE9FE; --on-primary:#fff; --star:#F5A623; --a:#6D5DF6; --b:#B18CFF; }
+html[data-theme="apple"]{ --bg:#0E1A11; --bg2:#132218; --surface:#16261B; --surface2:#1B2D20; --border:#243A2B; --text:#EAF7EE; --muted:#8FB59B; --faint:#5C7A66; --primary:#3FD873; --primary-d:#2FB55E; --primary-soft:#193A24; --on-primary:#06170B; --star:#EFA93B; --a:#3FD873; --b:#8CE6A8; }
+html[data-theme="warm"]{ --bg:#1C120A; --bg2:#241708; --surface:#28190C; --surface2:#301E0F; --border:#3C260F; --text:#FCE9D6; --muted:#C29868; --faint:#8A6A45; --primary:#F0762F; --primary-d:#D75F1C; --primary-soft:#3A2510; --on-primary:#1C120A; --star:#E8A33D; --a:#F0762F; --b:#FFC069; }
+html[data-theme="frost"]{ --bg:#081418; --bg2:#0C1B20; --surface:#0F2027; --surface2:#122731; --border:#1B3540; --text:#E4F6FA; --muted:#7FB6C4; --faint:#4C7C8B; --primary:#22C3EE; --primary-d:#0FA6CC; --primary-soft:#123640; --on-primary:#06181C; --star:#E7B23A; --a:#22C3EE; --b:#7FE0E0; }
+html[data-theme="violet"]{ --bg:#150A1F; --bg2:#1C0E29; --surface:#1F1030; --surface2:#26143A; --border:#33195080; --text:#F1E6FB; --muted:#B49BC6; --faint:#7A6490; --primary:#B25CF0; --primary-d:#9A46E0; --primary-soft:#2E1745; --on-primary:#150A1F; --star:#E6A93D; --a:#B25CF0; --b:#E38CE6; }
+html[data-theme="mono"]{ --bg:#0C0C0D; --bg2:#131314; --surface:#18181A; --surface2:#1E1E21; --border:#2A2A2E; --text:#F4F4F5; --muted:#A0A0A8; --faint:#65656C; --primary:#E5E5EA; --primary-d:#FFFFFF; --primary-soft:#232326; --on-primary:#0C0C0D; --star:#C8C8CE; --a:#8A8A92; --b:#E5E5EA; }
+html[data-theme="sakura"]{ --bg:#1E0E15; --bg2:#26121B; --surface:#2A1520; --surface2:#331827; --border:#3F1E30; --text:#FDEAF1; --muted:#D79BB1; --faint:#93576C; --primary:#F0699C; --primary-d:#E8558B; --primary-soft:#3A1B2C; --on-primary:#1E0E15; --star:#E8A33D; --a:#F0699C; --b:#FFB0C9; }
+html[data-theme="emerald"]{ --bg:#071912; --bg2:#0B2318; --surface:#0E2A1D; --surface2:#123424; --border:#1B4530; --text:#E3FAEE; --muted:#7FC7A5; --faint:#3F7C60; --primary:#16C381; --primary-d:#0C8F5B; --primary-soft:#123F2B; --on-primary:#04140D; --star:#E0A93B; --a:#16C381; --b:#57D9A6; }
+html[data-theme="russia"]{ --bg:#0A0E17; --bg2:#0E1420; --surface:#121A29; --surface2:#172033; --border:#22304A; --text:#F5F7FB; --muted:#9FB0CC; --faint:#5E6E8E; --primary:#2159C7; --primary-d:#173F94; --primary-soft:#1A2C4D; --on-primary:#FFFFFF; --star:#E7C23A; --a:#D52B3E; --b:#2159C7; --flag-w:#FFFFFF; --flag-b:#2159C7; --flag-r:#D52B3E; }
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; transition:background var(--dur) ease, color var(--dur) ease; -webkit-font-smoothing:antialiased; min-height:100vh; position:relative;}
+h1,h2,h3,.brand,.tab{font-family:'Manrope',sans-serif;}
+a{color:inherit; text-decoration:none;}
+button{font-family:inherit; cursor:pointer;}
+img{max-width:100%; display:block;}
+::selection{background:var(--primary); color:var(--on-primary);}
+.wrap{max-width:1240px; margin:0 auto; padding:0 24px;}
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--primary); outline-offset:2px;}
+
+/* ---- global background video layer ---- */
+#bgVideoLayer{position:fixed; inset:0; z-index:-2; overflow:hidden; background:var(--bg);}
+#bgVideoLayer video{width:100%; height:100%; object-fit:cover; filter:saturate(1.05);}
+#bgDim{position:fixed; inset:0; z-index:-1; background:var(--bg); opacity:.72; transition:opacity .3s, background .3s;}
+#bgEffect{position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden;}
+
+/* ---- glass ---- */
+.glass{
+  background:color-mix(in srgb, var(--surface) 58%, transparent);
+  backdrop-filter:blur(22px) saturate(160%); -webkit-backdrop-filter:blur(22px) saturate(160%);
+  border:1px solid color-mix(in srgb, var(--surface) 40%, white 18%);
+  box-shadow:inset 0 1px 0 color-mix(in srgb, white 12%, transparent), var(--shadow);
+}
+
+/* ---- topbar ---- */
+.topbar{position:sticky; top:12px; z-index:50; margin:12px auto 0;}
+.topbar-inner{max-width:1240px; margin:0 auto; border-radius:20px; padding:10px 16px; display:flex; align-items:center; gap:16px;}
+.brand{display:flex; align-items:center; gap:9px; font-weight:800; font-size:17px; white-space:nowrap;}
+.brand .mark{width:30px; height:30px; border-radius:9px; flex:none; background:conic-gradient(from 210deg, var(--a), var(--b), var(--a)); position:relative;}
+.brand .mark::after{content:""; position:absolute; inset:7px; border-radius:5px; background:var(--surface);}
+.tabs{display:flex; gap:2px; background:color-mix(in srgb, var(--bg2) 60%, transparent); padding:4px; border-radius:14px; flex-wrap:wrap;}
+.tab{font-size:13px; font-weight:600; color:var(--muted); padding:8px 13px; border-radius:11px; border:none; background:transparent; transition:background .18s, color .18s;}
+.tab:hover{color:var(--text);}
+.tab.active{background:var(--surface); color:var(--primary); box-shadow:var(--shadow);}
+.top-right{margin-left:auto; display:flex; align-items:center; gap:8px;}
+.micro-select{font-size:12px; font-weight:600; color:var(--muted); background:transparent; border:1px solid var(--border); border-radius:10px; padding:7px 8px; cursor:pointer;}
+.icon-btn{width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:15px; flex:none;}
+.theme-dot-btn{background:conic-gradient(from 210deg, var(--a), var(--b), var(--a)); border:1px solid var(--border);}
+.btn{font-weight:600; font-size:13.5px; border-radius:12px; padding:9px 15px; border:1px solid transparent; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; transition:transform .15s, background .2s;}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--primary); color:var(--on-primary);}
+.btn-primary:hover{background:var(--primary-d);}
+.btn-ghost{background:var(--surface2); color:var(--text); border-color:var(--border);}
+.btn-ghost:hover{border-color:var(--primary);}
+.btn-sm{padding:6px 11px; font-size:12px; border-radius:9px;}
+.avatar-chip{display:flex; align-items:center; gap:7px; background:var(--surface2); border:1px solid var(--border); border-radius:999px; padding:5px 12px 5px 5px; font-size:13px; font-weight:600;}
+.avatar-chip img{width:24px; height:24px; border-radius:50%; object-fit:cover;}
+
+/* ---- views ---- */
+.view{display:none;}
+.view.visible{display:block; animation:viewIn var(--dur) cubic-bezier(.22,.9,.3,1);}
+@keyframes viewIn{from{opacity:0; transform:translateY(10px) scale(.995);} to{opacity:1; transform:none;}}
+@media (prefers-reduced-motion:reduce){ .view.visible{animation:none;} *{transition:none !important;} }
+section{padding:44px 0;}
+.section-head{display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:24px; gap:16px; flex-wrap:wrap;}
+.section-head h2{font-size:24px; font-weight:800; letter-spacing:-.01em;}
+.section-head p{color:var(--muted); font-size:14px; margin-top:5px;}
+
+/* ---- hero ---- */
+.hero{padding:56px 0 40px; text-align:center;}
+.eyebrow{display:inline-flex; align-items:center; gap:8px; background:var(--primary-soft); color:var(--primary); font-size:12.5px; font-weight:700; padding:7px 15px; border-radius:999px; margin-bottom:20px;}
+.hero h1{font-size:clamp(30px,5vw,48px); font-weight:800; line-height:1.08; letter-spacing:-.02em; max-width:760px; margin:0 auto 16px;}
+.hero h1 span{background:linear-gradient(120deg,var(--a),var(--b)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.hero p{color:var(--muted); font-size:16px; max-width:540px; margin:0 auto 28px; line-height:1.6;}
+.hero-search{max-width:560px; margin:0 auto 22px; display:flex; gap:8px; border-radius:18px; padding:8px;}
+.hero-search input{flex:1; border:none; background:transparent; outline:none; padding:10px 14px; font-size:14.5px; color:var(--text);}
+.hero-search input::placeholder{color:var(--faint);}
+.pills{display:flex; gap:8px; flex-wrap:wrap; justify-content:center;}
+.pill{font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:999px; background:var(--surface2); border:1px solid var(--border); color:var(--muted); cursor:pointer;}
+.pill.active{background:var(--primary); border-color:var(--primary); color:var(--on-primary);}
+
+/* ---- android cards ---- */
+.android-card{border-radius:var(--radius-md); padding:18px; margin-bottom:12px;}
+.android-row{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+.tool-icon{width:44px; height:44px; border-radius:13px; flex:none; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px;}
+.android-meta{flex:1; min-width:190px;}
+.tool-name{font-weight:700; font-size:15px;}
+.tool-author{font-size:12px; color:var(--faint);}
+.tool-desc{font-size:13px; color:var(--muted); line-height:1.5; margin-top:5px;}
+.android-selects{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+.sel{font-size:12.5px; font-weight:600; padding:8px 10px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text);}
+.arch-badges{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;}
+.arch-badge{font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:7px; background:var(--bg2); color:var(--faint); border:1px solid var(--border);}
+.arch-badge.on{background:var(--primary-soft); color:var(--primary); border-color:transparent;}
+.vt-link{font-size:11.5px; font-weight:700; color:var(--muted); display:inline-flex; align-items:center; gap:4px;}
+.vt-link:hover{color:var(--primary);}
+.tool-rating{font-size:12px; font-weight:700; color:var(--star); white-space:nowrap;}
+
+/* ---- forms ---- */
+.form-card{border-radius:var(--radius-lg); padding:30px; max-width:640px; margin:0 auto;}
+.field{margin-bottom:15px;}
+.field label{display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px;}
+.field input, .field select, .field textarea{width:100%; padding:10px 12px; border-radius:11px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:13.5px; font-family:inherit; outline:none;}
+.field textarea{resize:vertical; min-height:80px;}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--primary);}
+.seg{display:flex; gap:6px; background:var(--bg2); padding:4px; border-radius:12px; flex-wrap:wrap;}
+.seg button{flex:1; padding:8px 10px; border-radius:9px; border:none; background:transparent; font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap;}
+.seg button.on{background:var(--surface); color:var(--primary); box-shadow:var(--shadow);}
+.notice{font-size:11.5px; color:var(--faint); line-height:1.6; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);}
+.range-row{display:flex; align-items:center; gap:10px;}
+.range-row input[type=range]{flex:1;}
+.range-val{font-size:12px; color:var(--muted); width:44px; text-align:right; flex:none;}
+.toggle-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-row div.t{font-size:13px; font-weight:600;}
+.toggle-row div.d{font-size:11.5px; color:var(--faint); margin-top:2px;}
+.switch{position:relative; width:38px; height:22px; flex:none;}
+.switch input{opacity:0; width:100%; height:100%; position:absolute; margin:0; cursor:pointer;}
+.switch .track{position:absolute; inset:0; background:var(--border); border-radius:999px; transition:.2s;}
+.switch .knob{position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:.2s;}
+.switch input:checked + .track{background:var(--primary);}
+.switch input:checked ~ .knob{transform:translateX(16px);}
+
+/* ---- notifications ---- */
+.outbox-item{display:flex; gap:12px; align-items:flex-start; padding:14px; border-radius:14px; margin-bottom:10px;}
+.outbox-dot{width:9px; height:9px; border-radius:50%; margin-top:6px; flex:none; background:var(--faint);}
+.outbox-dot.sent{background:#3BD481;} .outbox-dot.pending{background:var(--star);}
+.outbox-title{font-weight:700; font-size:13.5px;} .outbox-sub{font-size:12px; color:var(--muted); margin-top:2px;}
+.outbox-time{margin-left:auto; font-size:11px; color:var(--faint); white-space:nowrap;}
+.empty-state{text-align:center; padding:50px 20px; color:var(--faint);}
+
+/* ---- Profile view: editor + live preview (klux-style) ---- */
+.profile-layout{display:grid; grid-template-columns:1fr 360px; gap:22px; align-items:flex-start;}
+@media (max-width:980px){ .profile-layout{grid-template-columns:1fr;} }
+.editor-card{border-radius:var(--radius-lg); padding:6px;}
+.editor-tabs{display:flex; gap:2px; padding:10px 10px 0; flex-wrap:wrap;}
+.editor-tabs button{font-size:12px; font-weight:700; padding:9px 13px; border-radius:10px 10px 0 0; background:transparent; border:none; color:var(--muted);}
+.editor-tabs button.on{background:var(--surface2); color:var(--primary);}
+.editor-panel{background:var(--surface2); border-radius:0 14px 14px 14px; padding:20px; margin:0 6px 6px;}
+.editor-pane{display:none;}
+.editor-pane.on{display:block;}
+.pane-title{font-size:13.5px; font-weight:700; margin-bottom:2px;}
+.pane-sub{font-size:11.5px; color:var(--faint); margin-bottom:14px;}
+.bg-grid, .music-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;}
+.bg-opt, .music-opt{border:1.5px solid var(--border); border-radius:12px; padding:8px; cursor:pointer; font-size:11.5px; font-weight:600; text-align:center; background:var(--surface); position:relative;}
+.bg-opt.selected, .music-opt.selected{border-color:var(--primary); color:var(--primary);}
+.bg-opt .thumb{width:100%; height:44px; border-radius:8px; margin-bottom:6px; background:linear-gradient(135deg,var(--a),var(--b)); opacity:.55;}
+.effect-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+.effect-opt{border:1.5px solid var(--border); border-radius:10px; padding:9px 6px; font-size:11px; font-weight:600; text-align:center; cursor:pointer; background:var(--surface); color:var(--muted);}
+.effect-opt.selected{border-color:var(--primary); color:var(--primary);}
+.shape-seg{display:flex; gap:6px;}
+.shape-seg button{flex:1; padding:8px; border-radius:9px; border:1px solid var(--border); background:var(--surface); font-size:12px; font-weight:600; color:var(--muted);}
+.shape-seg button.on{border-color:var(--primary); color:var(--primary);}
+.link-row{display:flex; gap:6px; margin-bottom:8px;}
+.link-row select{width:110px; flex:none;}
+.link-row input{flex:1;}
+.link-row button{flex:none;}
+.avatar-upload{display:flex; align-items:center; gap:12px; margin-bottom:16px;}
+.avatar-upload img, .avatar-upload .ph{width:56px; height:56px; border-radius:50%; object-fit:cover; background:var(--primary-soft); flex:none;}
+
+/* live preview card */
+.preview-wrap{position:sticky; top:120px;}
+.preview-card{border-radius:26px; padding:26px 22px; text-align:center; position:relative; overflow:hidden;}
+.preview-avatar{width:84px; height:84px; margin:0 auto 12px; overflow:hidden; background:var(--primary-soft); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:26px; color:var(--primary);}
+.preview-avatar img{width:100%; height:100%; object-fit:cover;}
+.preview-avatar.circle{border-radius:50%;} .preview-avatar.rounded{border-radius:20px;} .preview-avatar.square{border-radius:6px;}
+.preview-name{font-weight:800; font-size:19px;}
+.preview-handle{font-size:12.5px; color:var(--muted); margin-bottom:8px;}
+.preview-bio{font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:6px;}
+.preview-loc{font-size:12px; color:var(--faint); margin-bottom:14px;}
+.preview-socials{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:18px;}
+.preview-socials a{width:34px; height:34px; border-radius:50%; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:14px;}
+.preview-stats{border-radius:16px; padding:14px; background:var(--surface2); border:1px solid var(--border);}
+.preview-stats .row{display:flex; justify-content:space-around; text-align:center;}
+.preview-stats .num{font-size:18px; font-weight:800;}
+.preview-stats .lbl{font-size:10.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.03em;}
+
+@keyframes floaty{0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);}}
+
+/* ---- modals ---- */
+.modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(3px); z-index:100; display:none; align-items:center; justify-content:center; padding:20px;}
+.modal-backdrop.open{display:flex;}
+.modal{width:100%; max-width:440px; border-radius:var(--radius-lg); padding:26px; position:relative; max-height:88vh; overflow-y:auto;}
+.modal-close{position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:50%; border:1px solid var(--border); background:var(--surface2); display:flex; align-items:center; justify-content:center;}
+.modal h3{font-size:19px; font-weight:800; margin-bottom:4px;}
+.modal .sub{font-size:13px; color:var(--muted); margin-bottom:20px;}
+.theme-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px;}
+.theme-card{border:1.5px solid var(--border); border-radius:14px; padding:12px; display:flex; align-items:center; gap:10px; cursor:pointer; background:var(--surface2); position:relative;}
+.theme-card.selected{border-color:var(--primary); background:var(--primary-soft);}
+.theme-card .check{position:absolute; top:8px; right:8px; width:16px; height:16px; border-radius:50%; background:var(--primary); color:var(--on-primary); font-size:10px; font-weight:800; display:none; align-items:center; justify-content:center;}
+.theme-card.selected .check{display:flex;}
+.swatch{width:32px; height:32px; border-radius:50%; flex:none; position:relative; overflow:hidden; box-shadow:inset 0 0 0 3px var(--surface);}
+.swatch::before,.swatch::after{content:""; position:absolute; inset:0;}
+.swatch::before{background:var(--sw-bg);} .swatch::after{background:var(--sw-primary); clip-path:polygon(0 0,100% 0,0 100%);}
+.swatch.flag::before{background:linear-gradient(#fff 0 33%, #2159C7 33% 66%, #D52B3E 66% 100%);} .swatch.flag::after{display:none;}
+.tname{font-weight:700; font-size:13px;} .ttag{font-size:11px; color:var(--muted);}
+.save-scope{display:flex; gap:8px; margin-top:6px;}
+.save-scope label{flex:1; border:1px solid var(--border); border-radius:12px; padding:11px; font-size:12px; font-weight:600; cursor:pointer; display:flex; flex-direction:column; gap:3px;}
+.save-scope span.d{font-weight:400; color:var(--faint); font-size:10.5px;}
+
+.toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0; padding:12px 20px; border-radius:14px; z-index:200; font-size:13px; font-weight:600; transition:.28s;}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;}
+.foot-grid{display:flex; justify-content:space-between; gap:36px; flex-wrap:wrap; margin-bottom:20px;}
+.foot-brand p{color:var(--muted); font-size:12.5px; max-width:300px; margin-top:9px; line-height:1.6;}
+.foot-cols{display:flex; gap:46px;}
+.foot-col h4{font-size:11.5px; margin-bottom:11px; color:var(--faint); text-transform:uppercase; letter-spacing:.04em;}
+.foot-col a{display:block; font-size:12.5px; color:var(--muted); margin-bottom:8px;}
+.foot-col a:hover{color:var(--primary);}
+.foot-bottom{font-size:11.5px; color:var(--faint); border-top:1px solid var(--border); padding-top:16px;}
+
+.mini-player{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; margin-top:14px;}
+.mini-player button{width:30px; height:30px; border-radius:50%; border:none; background:var(--primary); color:var(--on-primary); flex:none;}
+.mini-player .info{flex:1; min-width:0;}
+.mini-player .tname2{font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.mini-player input[type=range]{width:60px;}
+
+@media (max-width:900px){ .tabs{display:none;} }
+@media (max-width:600px){ .foot-grid{flex-direction:column;} .bg-grid,.music-grid{grid-template-columns:repeat(2,1fr);} .effect-grid{grid-template-columns:repeat(3,1fr);} }
+</style>
+</head>
+<body>
+
+<div id="bgVideoLayer"></div>
+<div id="bgDim"></div>
+<canvas id="bgEffect"></canvas>
+
+<div class="topbar">
+  <div class="topbar-inner glass">
+    <div class="brand"><span class="mark"></span>DevHub</div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-view="home">Главная</button>
+      <button class="tab" data-view="android">Каталог</button>
+      <button class="tab" data-view="profile">Профиль</button>
+      <button class="tab" data-view="requests">Заявки</button>
+      <button class="tab" data-view="notifications">Уведомления</button>
+    </nav>
+    <div class="top-right">
+      <select class="micro-select" id="langSelect" title="Язык"><option value="ru">RU</option><option value="en">EN</option></select>
+      <select class="micro-select" id="tzSelect" title="Часовой пояс">
+        <option value="Europe/Moscow">GMT+3 МСК</option>
+        <option value="Europe/London">GMT+0 Лондон</option>
+        <option value="Europe/Berlin">GMT+1 Берлин</option>
+        <option value="Asia/Almaty">GMT+5 Алматы</option>
+        <option value="Asia/Novosibirsk">GMT+7 Новосибирск</option>
+      </select>
+      <button class="icon-btn theme-dot-btn" id="openSettings" title="Внешний вид"></button>
+      <button class="btn btn-ghost" id="openAuthBtn">Войти</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HOME ============ -->
+<div class="view visible" id="view-home">
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow" id="appCountBadge">✦ Загрузка каталога…</span>
+      <h1>Android-инструменты для <span>разработчиков</span> в одном каталоге</h1>
+      <p>Проверенные APK, версии под разные архитектуры и ссылки на VirusTotal — без лишнего шума.</p>
+      <div class="hero-search glass">
+        <input type="text" placeholder="Найти приложение…">
+        <button class="btn btn-primary">Найти</button>
+      </div>
+      <div class="pills" id="pills">
+        <span class="pill active" data-filter="all">Все</span>
+        <span class="pill" data-filter="dev">Разработка</span>
+        <span class="pill" data-filter="net">Сеть</span>
+        <span class="pill" data-filter="db">Базы данных</span>
+      </div>
+    </div>
+  </section>
+  <section>
+    <div class="wrap">
+      <div class="section-head"><div><h2>Популярное</h2><p>Чаще всего скачивают на этой неделе</p></div>
+        <button class="btn btn-ghost btn-sm" data-goto="android">Весь каталог →</button></div>
+      <div id="homeList"></div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ CATALOG (ANDROID) ============ -->
+<div class="view" id="view-android">
+  <section style="padding-top:36px">
+    <div class="wrap">
+      <div class="section-head"><div><h2>Каталог Android-приложений</h2><p id="catalogCount">—</p></div></div>
+      <div id="androidList"></div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ PROFILE (klux-style bio editor) ============ -->
+<div class="view" id="view-profile">
+  <section style="padding-top:36px">
+    <div class="wrap">
+      <div class="section-head"><div><h2>Профиль</h2><p>Настройте страницу так же гибко, как в Klux Bio Link — с живым превью справа</p></div></div>
+      <div class="profile-layout">
+        <div class="editor-card glass">
+          <div class="editor-tabs" id="editorTabs">
+            <button class="on" data-pane="page">Страница</button>
+            <button data-pane="look">Вид</button>
+            <button data-pane="background">Фон</button>
+            <button data-pane="audio">Аудио</button>
+            <button data-pane="effects">Эффекты</button>
+            <button data-pane="links">Ссылки</button>
+            <button data-pane="stats">Статистика</button>
+          </div>
+          <div class="editor-panel">
+
+            <div class="editor-pane on" id="pane-page">
+              <div class="pane-title">Основная информация</div>
+              <div class="pane-sub">Заполняете вы сами — эти поля видят посетители страницы.</div>
+              <div class="avatar-upload">
+                <img id="avatarPreviewSmall" class="ph" style="display:none">
+                <div id="avatarPh" class="ph" style="display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--primary);">A</div>
+                <div>
+                  <input type="file" id="avatarInput" accept="image/*" style="display:none">
+                  <button class="btn btn-ghost btn-sm" id="avatarBtn">Загрузить аватар</button>
+                </div>
+              </div>
+              <div class="field"><label>Имя</label><input id="pName" placeholder="Ваше имя"></div>
+              <div class="field"><label>@handle</label><input id="pHandle" placeholder="@username"></div>
+              <div class="field"><label>Описание</label><textarea id="pBio" placeholder="Пара строк о себе"></textarea></div>
+              <div class="field"><label>Геопозиция</label><input id="pLoc" placeholder="Город, страна"></div>
+            </div>
+
+            <div class="editor-pane" id="pane-look">
+              <div class="pane-title">Прозрачность и форма</div>
+              <div class="pane-sub">Как выглядит карточка профиля поверх фона.</div>
+              <div class="field"><label>Прозрачность карточки</label>
+                <div class="range-row"><input type="range" id="rOpacity" min="0" max="100" value="58"><span class="range-val" id="rOpacityVal">58%</span></div></div>
+              <div class="field"><label>Блюр фона</label>
+                <div class="range-row"><input type="range" id="rBlur" min="0" max="40" value="22"><span class="range-val" id="rBlurVal">22px</span></div></div>
+              <div class="field"><label>Скругление углов</label>
+                <div class="range-row"><input type="range" id="rRadius" min="4" max="40" value="26"><span class="range-val" id="rRadiusVal">26px</span></div></div>
+              <div class="field"><label>Форма аватара</label>
+                <div class="shape-seg" id="avatarShape">
+                  <button class="on" data-shape="circle">Круг</button>
+                  <button data-shape="rounded">Скругл.</button>
+                  <button data-shape="square">Квадрат</button>
+                </div></div>
+              <div class="toggle-row"><div><div class="t">Кольцо вокруг аватара</div><div class="d">В цвет акцента темы</div></div>
+                <label class="switch"><input type="checkbox" id="tRing"><span class="track"></span><span class="knob"></span></label></div>
+            </div>
+
+            <div class="editor-pane" id="pane-background">
+              <div class="pane-title">Фоновое видео</div>
+              <div class="pane-sub">Выберите один из ваших роликов или загрузите свой.</div>
+              <div class="bg-grid" id="bgGrid"></div>
+              <input type="file" id="bgUpload" accept="video/*,image/*" style="display:none">
+              <button class="btn btn-ghost btn-sm" id="bgUploadBtn" style="width:100%; justify-content:center;">Загрузить свой фон</button>
+              <div class="field" style="margin-top:14px;"><label>Затемнение фона</label>
+                <div class="range-row"><input type="range" id="rDim" min="0" max="100" value="72"><span class="range-val" id="rDimVal">72%</span></div></div>
+              <div class="pane-title" style="margin-top:16px;">Эффект поверх фона</div>
+              <div class="effect-grid" id="effectGrid">
+                <div class="effect-opt selected" data-fx="none">None</div>
+                <div class="effect-opt" data-fx="aurora">Aurora</div>
+                <div class="effect-opt" data-fx="snow">Snowflakes</div>
+                <div class="effect-opt" data-fx="stars">Starfield</div>
+                <div class="effect-opt" data-fx="rain">Rain</div>
+                <div class="effect-opt" data-fx="grid">Retro Grid</div>
+              </div>
+            </div>
+
+            <div class="editor-pane" id="pane-audio">
+              <div class="pane-title">Музыка</div>
+              <div class="pane-sub">Играет в мини-плеере. Можно загрузить свой трек.</div>
+              <div class="music-grid" id="musicGrid"></div>
+              <input type="file" id="musicUpload" accept="audio/*" style="display:none">
+              <button class="btn btn-ghost btn-sm" id="musicUploadBtn" style="width:100%; justify-content:center;">Загрузить свой трек</button>
+              <div class="toggle-row" style="margin-top:14px;"><div><div class="t">Автовоспроизведение</div><div class="d">Начинать трек сразу</div></div>
+                <label class="switch"><input type="checkbox" id="tAutoplay"><span class="track"></span><span class="knob"></span></label></div>
+              <div class="field"><label>Громкость по умолчанию</label>
+                <div class="range-row"><input type="range" id="rVolume" min="0" max="100" value="44"><span class="range-val" id="rVolumeVal">44%</span></div></div>
+              <div class="mini-player glass">
+                <button id="playBtn">▶</button>
+                <div class="info"><div class="tname2" id="nowPlaying">Ничего не выбрано</div></div>
+                <input type="range" id="miniVolume" min="0" max="100" value="44">
+              </div>
+              <audio id="audioEl" loop></audio>
+            </div>
+
+            <div class="editor-pane" id="pane-effects">
+              <div class="pane-title">Эффекты имени</div>
+              <div class="pane-sub">Применяются к имени в превью.</div>
+              <div class="effect-grid" id="nameEffectGrid">
+                <div class="effect-opt selected" data-nfx="none">None</div>
+                <div class="effect-opt" data-nfx="glow">Glow</div>
+                <div class="effect-opt" data-nfx="gradient">Gradient</div>
+                <div class="effect-opt" data-nfx="shuffle">Shuffle</div>
+              </div>
+              <div class="toggle-row" style="margin-top:10px;"><div><div class="t">Tilt</div><div class="d">Карточка слегка наклоняется за курсором</div></div>
+                <label class="switch"><input type="checkbox" id="tTilt"><span class="track"></span><span class="knob"></span></label></div>
+              <div class="toggle-row"><div><div class="t">Значок «Premium»</div><div class="d">Корона над именем</div></div>
+                <label class="switch"><input type="checkbox" id="tCrown"><span class="track"></span><span class="knob"></span></label></div>
+            </div>
+
+            <div class="editor-pane" id="pane-links">
+              <div class="pane-title">Социальные ссылки</div>
+              <div class="pane-sub">До 6 ссылок — покажутся иконками в превью.</div>
+              <div id="linksList"></div>
+              <button class="btn btn-ghost btn-sm" id="addLinkBtn" style="width:100%; justify-content:center; margin-top:8px;">+ Добавить ссылку</button>
+            </div>
+
+            <div class="editor-pane" id="pane-stats">
+              <div class="pane-title">Статистика</div>
+              <div class="pane-sub">Считается автоматически по действиям на сайте, но начальные числа можно задать вручную.</div>
+              <div class="field"><label>Скачиваний приложений (стартовое число)</label><input id="statDownloads" type="number" value="0"></div>
+              <div class="field"><label>Предложений автору в Telegram (стартовое число)</label><input id="statSuggestions" type="number" value="0"></div>
+              <p class="notice">Каждая заявка во вкладке «Заявки» и каждая загрузка в «Каталоге» увеличивают счётчики автоматически.</p>
+            </div>
+
+          </div>
+          <div style="padding:14px 20px 20px; display:flex; gap:10px; align-items:center;">
+            <button class="btn btn-primary" id="profileSave">Сохранить профиль</button>
+            <span class="save-hint" style="font-size:11.5px; color:var(--faint);" id="profileSaveHint">Изменения видно в превью сразу</span>
+          </div>
+        </div>
+
+        <div class="preview-wrap">
+          <div class="preview-card glass" id="previewCard">
+            <div class="preview-avatar circle" id="previewAvatar"><span id="previewAvatarLetter">A</span></div>
+            <div class="preview-name" id="previewName">Ваше имя</div>
+            <div class="preview-handle" id="previewHandle">@username</div>
+            <div class="preview-bio" id="previewBio">Пара строк о себе появится здесь.</div>
+            <div class="preview-loc" id="previewLoc">📍 —</div>
+            <div class="preview-socials" id="previewSocials"></div>
+            <div class="preview-stats">
+              <div class="row">
+                <div><div class="num" id="previewDownloads">0</div><div class="lbl">Скачано</div></div>
+                <div><div class="num" id="previewSuggestions">0</div><div class="lbl">Предложено</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ REQUESTS ============ -->
+<div class="view" id="view-requests">
+  <section style="padding-top:36px">
+    <div class="wrap">
+      <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center;">
+        <h2>Заявки и жалобы</h2>
+        <p>Добавить / удалить приложение или пожаловаться — заявка уходит модераторам DevHub</p>
+      </div>
+      <div class="form-card glass">
+        <div class="seg" id="reqType">
+          <button class="on" data-type="add">Добавить</button>
+          <button data-type="remove">Удалить</button>
+          <button data-type="complaint">Жалоба</button>
+        </div>
+        <br>
+        <div class="field"><label>Название приложения</label><input id="reqName" placeholder="Например, Acode"></div>
+        <div class="field"><label>Ссылка</label><input id="reqLink" placeholder="https://…"></div>
+        <div class="field"><label>Комментарий</label><textarea id="reqComment" placeholder="Опишите причину…"></textarea></div>
+        <div class="field"><label>Контакт для ответа (необязательно)</label><input id="reqContact" placeholder="email или @telegram"></div>
+        <button class="btn btn-primary" id="reqSubmit" style="width:100%; justify-content:center; padding:12px;">Отправить заявку</button>
+        <p class="notice">Заявка уходит в Telegram-бота через серверный обработчик (токен бота хранится только на сервере, не в этом файле). Пока бэкенд не подключён — заявка сохраняется локально и видна во вкладке «Уведомления».</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ NOTIFICATIONS ============ -->
+<div class="view" id="view-notifications">
+  <section style="padding-top:36px">
+    <div class="wrap">
+      <div class="section-head"><div><h2>Уведомления</h2><p>Всё, что было отправлено из этого браузера</p></div>
+        <button class="btn btn-ghost btn-sm" id="clearOutbox">Очистить</button></div>
+      <div id="outboxList" style="max-width:700px; margin:0 auto;"></div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand"><div class="brand"><span class="mark"></span>DevHub</div>
+        <p>Каталог Android-приложений для разработчиков с гибкой персонализацией профиля.</p></div>
+      <div class="foot-cols">
+        <div class="foot-col"><h4>Разделы</h4>
+          <a href="#" data-goto="android">Каталог</a><a href="#" data-goto="profile">Профиль</a><a href="#" data-goto="requests">Заявки</a></div>
+        <div class="foot-col"><h4>Платформа</h4>
+          <a href="#" data-goto="notifications">Уведомления</a><a href="#" id="footSettings">Настройки</a><a href="#" id="footAuth">Аккаунт</a></div>
+      </div>
+    </div>
+    <div class="foot-bottom">© 2026 DevHub. Все права защищены.</div>
+  </div>
+</footer>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div class="modal-backdrop" id="settingsBackdrop">
+  <div class="modal glass" style="max-width:640px;">
+    <button class="modal-close" data-close="settingsBackdrop">✕</button>
+    <h3>Внешний вид</h3>
+    <p class="sub">Тема «Россия» автоматически включает фон russia.mp4 и трек russia.mp3.</p>
+    <div class="theme-grid" id="themeGrid"></div>
+    <div class="field">
+      <label>Где сохранять настройки</label>
+      <div class="save-scope">
+        <label><input type="radio" name="scope" value="device" checked>Устройство<span class="d">localStorage</span></label>
+        <label><input type="radio" name="scope" value="account">Аккаунт<span class="d" id="scopeAccountHint">нужен вход</span></label>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="settingsSave" style="width:100%; justify-content:center; padding:11px; margin-top:6px;">Сохранить</button>
+  </div>
+</div>
+
+<!-- ============ AUTH MODAL ============ -->
+<div class="modal-backdrop" id="authBackdrop">
+  <div class="modal glass">
+    <button class="modal-close" data-close="authBackdrop">✕</button>
+    <div class="seg" id="authTabs"><button class="on" data-tab="login">Вход</button><button data-tab="register">Регистрация</button></div><br>
+    <div class="field"><label>Email</label><input id="authEmail" type="email" placeholder="you@example.com"></div>
+    <div class="field"><label>Пароль</label><input id="authPass" type="password" placeholder="••••••••"></div>
+    <div class="field" id="nameField" style="display:none;"><label>Имя</label><input id="authName" placeholder="Как вас называть"></div>
+    <button class="btn btn-primary" id="authSubmit" style="width:100%; justify-content:center; padding:11px;">Войти</button>
+    <p class="notice">Аккаунт хранится в localStorage вашего браузера — реального сервера аутентификации у прототипа нет.</p>
+  </div>
+</div>
+
+<div class="toast glass" id="toast"></div>
+
+<script>
+/* ===================== BACKEND ENDPOINT ===================== */
+/* Сюда вписываешь URL своего Cloudflare Worker (шаг 4 инструкции).
+   Пока тут пусто/localhost — заявки просто падают в локальный Outbox. */
+   const REPORT_ENDPOINT = 'https://devhub-relay.cryptomail14dash.workers.dev';
+
+/* ===================== DATA ===================== */
+const androidApps = [
+  {id:'a1', icon:'💬', name:'Termux', author:'Termux Team', rating:4.7, cat:'dev', desc:'Полноценный Linux-терминал на Android без root.',
+   versions:{'1.4.0':['arm64-v8a','armeabi-v7a'], '1.3.2':['arm64-v8a']}},
+  {id:'a2', icon:'📝', name:'Acode', author:'Acode Foundation', rating:4.5, cat:'dev', desc:'Редактор кода с подсветкой синтаксиса и Git.',
+   versions:{'1.10.0':['arm64-v8a','armeabi-v7a','x86_64'], '1.9.4':['arm64-v8a','armeabi-v7a']}},
+  {id:'a3', icon:'🐳', name:'Docker Client', author:'Community', rating:4.3, cat:'net', desc:'Управление удалёнными Docker-контейнерами с телефона.',
+   versions:{'2.2.0':['arm64-v8a']}},
+  {id:'a4', icon:'🗄', name:'DB Client Mobile', author:'DBeaver Corp', rating:4.4, cat:'db', desc:'Просмотр и редактирование баз данных на ходу.',
+   versions:{'1.5.0':['arm64-v8a','x86_64'], '1.4.0':['arm64-v8a','armeabi-v7a','x86_64']}},
+  {id:'a5', icon:'📡', name:'Net Analyzer', author:'OpenSource', rating:4.6, cat:'net', desc:'Анализ Wi-Fi сетей и сканирование портов.',
+   versions:{'3.1.0':['arm64-v8a','armeabi-v7a','x86','x86_64']}},
+  {id:'a6', icon:'✉', name:'API Tester', author:'DevKit', rating:4.5, cat:'dev', desc:'Отправка REST-запросов и просмотр ответов на телефоне.',
+   versions:{'2.0.1':['arm64-v8a','armeabi-v7a']}},
+];
+const ALL_ARCHS = ['arm64-v8a','armeabi-v7a','x86_64','x86'];
+
+const bgOptions = [
+  {id:'sakura', name:'Sakura', file:'bg/sakura.mp4'},
+  {id:'mountain_clouds', name:'Mountain', file:'bg/mountain_clouds.mp4'},
+  {id:'stars', name:'Stars', file:'bg/stars.mp4'},
+  {id:'space', name:'Space', file:'bg/space.mp4'},
+  {id:'russia', name:'Russia', file:'bg/russia.mp4'},
+  {id:'none', name:'Без фона', file:null},
+];
+const musicOptions = [
+  {id:'t1', name:'1,5', file:'music/1-5.mp3'},
+  {id:'t2', name:"i can't do it anymore", file:'music/i-cant-do-it-anymore.mp3'},
+  {id:'t3', name:'russia', file:'music/russia.mp3'},
+  {id:'t4', name:'айсберг', file:'music/aisberg.mp3'},
+  {id:'none', name:'Без музыки', file:null},
+];
+
+const themes = [
+  {id:'night', name:'Night', tag:'Тёмный', bg:'#0A0B10', pr:'#8B7CFF'},
+  {id:'day', name:'Day', tag:'Светлый', bg:'#EDF0FA', pr:'#6D5DF6'},
+  {id:'apple', name:'Apple', tag:'Зелёный', bg:'#0E1A11', pr:'#3FD873'},
+  {id:'warm', name:'Warm', tag:'Янтарный', bg:'#1C120A', pr:'#F0762F'},
+  {id:'frost', name:'Frost', tag:'Ледяной', bg:'#081418', pr:'#22C3EE'},
+  {id:'violet', name:'Violet', tag:'Фиолетовый', bg:'#150A1F', pr:'#B25CF0'},
+  {id:'mono', name:'Mono', tag:'Ч/б', bg:'#0C0C0D', pr:'#E5E5EA'},
+  {id:'sakura', name:'Sakura', tag:'Розовый', bg:'#1E0E15', pr:'#F0699C'},
+  {id:'emerald', name:'Emerald', tag:'Изумруд', bg:'#071912', pr:'#16C381'},
+  {id:'russia', name:'Russia', tag:'Флаг РФ', flag:true, pr:'#2159C7'},
+];
+
+/* ===================== STATE ===================== */
+let state = {
+  theme:'night', lang:'ru', tz:'Europe/Moscow',
+  profile:{name:'', handle:'', bio:'', loc:'', avatar:null, opacity:58, blur:22, radius:26, avatarShape:'circle', ring:false,
+    bg:'none', bgCustom:null, dim:72, bgFx:'none', track:'none', trackCustom:null, trackName:null, autoplay:false, volume:44,
+    nameFx:'none', tilt:false, crown:false, links:[], statDownloads:0, statSuggestions:0},
+};
+let currentUser = null;
+let outbox = [];
+try{ outbox = JSON.parse(localStorage.getItem('devhub_outbox')||'[]'); }catch(e){ outbox = []; }
+try{
+  const savedProfile = JSON.parse(localStorage.getItem('devhub_profile'));
+  if(savedProfile) state.profile = Object.assign(state.profile, savedProfile);
+  const savedSettings = JSON.parse(localStorage.getItem('devhub_settings'));
+  if(savedSettings){ state.theme = savedSettings.theme || state.theme; state.tz = savedSettings.tz || state.tz; }
+}catch(e){}
+
+/* ===================== VIEW ROUTER ===================== */
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('visible'));
+  document.getElementById('view-'+name).classList.add('visible');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>showView(t.dataset.view)));
+document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click', e=>{e.preventDefault(); showView(el.dataset.goto);}));
+
+/* ===================== ANDROID CATALOG ===================== */
+function androidCardHTML(app){
+  const versionKeys = Object.keys(app.versions);
+  const archsForV = app.versions[versionKeys[0]];
+  return `<div class="android-card card glass" data-app="${app.id}">
+    <div class="android-row">
+      <div class="tool-icon">${app.icon}</div>
+      <div class="android-meta">
+        <div style="display:flex; align-items:center; gap:8px;"><div class="tool-name">${app.name}</div><div class="tool-rating">★ ${app.rating}</div></div>
+        <div class="tool-author">${app.author}</div>
+        <div class="tool-desc">${app.desc}</div>
+      </div>
+      <div class="android-selects">
+        <select class="sel version-sel" data-app="${app.id}">${versionKeys.map(v=>`<option value="${v}">v${v}</option>`).join('')}</select>
+        <a class="btn btn-primary btn-sm dl-btn" data-app="${app.id}" href="#">Скачать</a>
+        <a class="vt-link" target="_blank" rel="noopener" href="https://www.virustotal.com/gui/search/${encodeURIComponent(app.name)}">🛡 VirusTotal ↗</a>
+      </div>
+    </div>
+    <div class="arch-badges" data-archwrap="${app.id}">
+      ${ALL_ARCHS.map(a=>`<span class="arch-badge ${archsForV.includes(a)?'on':''}" data-arch="${a}">${a}</span>`).join('')}
+    </div>
+  </div>`;
+}
+function renderAndroid(){
+  document.getElementById('homeList').innerHTML = androidApps.slice(0,4).map(androidCardHTML).join('');
+  document.getElementById('androidList').innerHTML = androidApps.map(androidCardHTML).join('');
+  document.getElementById('appCountBadge').textContent = `✦ ${androidApps.length} проверенных приложений в каталоге`;
+  document.getElementById('catalogCount').textContent = `${androidApps.length} приложений для Android`;
+  document.querySelectorAll('.version-sel').forEach(sel=>{
+    sel.addEventListener('change', ()=>{
+      const app = androidApps.find(a=>a.id===sel.dataset.app);
+      const archs = app.versions[sel.value];
+      document.querySelectorAll(`[data-archwrap="${app.id}"] .arch-badge`).forEach(b=>b.classList.toggle('on', archs.includes(b.dataset.arch)));
+    });
+  });
+  document.querySelectorAll('.dl-btn').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.preventDefault();
+      const app = androidApps.find(a=>a.id===btn.dataset.app);
+      const sel = document.querySelector(`.version-sel[data-app="${app.id}"]`);
+      state.profile.statDownloads = (state.profile.statDownloads||0) + 1;
+      saveProfileLocal();
+      updatePreview();
+      showToast(`«${app.name}» v${sel.value} — загрузка начнётся после подключения бэкенда раздачи файлов.`);
+    });
+  });
+}
+document.querySelectorAll('#pills .pill').forEach(p=>{
+  p.addEventListener('click', ()=>{
+    document.querySelectorAll('#pills .pill').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+    const f = p.dataset.filter;
+    document.querySelectorAll('#homeList .card').forEach(c=>{
+      const app = androidApps.find(a=>a.id===c.dataset.app);
+      c.style.display = (f==='all' || app.cat===f) ? '' : 'none';
+    });
+  });
+});
+
+/* ===================== THEME / BACKGROUND / SETTINGS ===================== */
+const bgVideoEl = document.createElement('video');
+bgVideoEl.muted = true; bgVideoEl.loop = true; bgVideoEl.playsInline = true; bgVideoEl.autoplay = true;
+
+function applyBackground(id, customUrl){
+  const layer = document.getElementById('bgVideoLayer');
+  layer.innerHTML = '';
+  let src = customUrl;
+  if(!src){ const opt = bgOptions.find(b=>b.id===id); src = opt ? opt.file : null; }
+  if(src){
+    const v = document.createElement('video');
+    v.src = src; v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true;
+    v.play().catch(()=>{});
+    layer.appendChild(v);
+  }
+  document.getElementById('bgDim').style.opacity = (state.profile.dim||72)/100;
+}
+function applyTheme(id){
+  document.documentElement.setAttribute('data-theme', id);
+  document.querySelectorAll('#themeGrid .theme-card').forEach(c=>c.classList.toggle('selected', c.dataset.theme===id));
+  state.theme = id;
+  if(id==='russia'){
+    state.profile.bg = 'russia';
+    applyBackground('russia');
+    playTrack('t3', true);
+    setActiveMusicOption('t3');
+    setActiveBgOption('russia');
+  }
+}
+function renderThemeGrid(){
+  const cur = state.theme;
+  document.getElementById('themeGrid').innerHTML = themes.map(t=>`
+    <div class="theme-card ${t.id===cur?'selected':''}" data-theme="${t.id}" style="${t.flag?'':`--sw-bg:${t.bg};--sw-primary:${t.pr}`}" tabindex="0">
+      <span class="check">✓</span><span class="swatch ${t.flag?'flag':''}"></span>
+      <div><div class="tname">${t.name}</div><div class="ttag">${t.tag}</div></div>
+    </div>`).join('');
+  document.querySelectorAll('#themeGrid .theme-card').forEach(card=>{
+    card.addEventListener('click', ()=>applyTheme(card.dataset.theme));
+    card.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); applyTheme(card.dataset.theme);} });
+  });
+}
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', ()=>closeModal(b.dataset.close)));
+document.querySelectorAll('.modal-backdrop').forEach(bd=>bd.addEventListener('click', e=>{ if(e.target===bd) bd.classList.remove('open'); }));
+document.getElementById('openSettings').addEventListener('click', ()=>{ renderThemeGrid(); openModal('settingsBackdrop'); });
+document.getElementById('footSettings').addEventListener('click', e=>{ e.preventDefault(); renderThemeGrid(); openModal('settingsBackdrop'); });
+document.getElementById('settingsSave').addEventListener('click', ()=>{
+  const scope = document.querySelector('input[name="scope"]:checked').value;
+  const settings = {theme: state.theme, tz: document.getElementById('tzSelect').value};
+  if(scope==='device'){ try{ localStorage.setItem('devhub_settings', JSON.stringify(settings)); }catch(e){} showToast('Настройки сохранены на устройстве'); }
+  else{ if(!currentUser){ showToast('Сначала войдите в аккаунт'); return; } currentUser.settings = settings; showToast(`Сохранено в аккаунте ${currentUser.email}`); }
+  closeModal('settingsBackdrop');
+});
+
+/* ===================== AUTH ===================== */
+let authMode = 'login';
+document.querySelectorAll('#authTabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#authTabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    authMode = b.dataset.tab;
+    document.getElementById('nameField').style.display = authMode==='register' ? 'block' : 'none';
+    document.getElementById('authSubmit').textContent = authMode==='register' ? 'Создать аккаунт' : 'Войти';
+  });
+});
+document.getElementById('openAuthBtn').addEventListener('click', ()=>openModal('authBackdrop'));
+document.getElementById('footAuth').addEventListener('click', e=>{ e.preventDefault(); openModal('authBackdrop'); });
+document.getElementById('authSubmit').addEventListener('click', ()=>{
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value;
+  if(!email || !pass){ showToast('Заполните email и пароль'); return; }
+  const name = document.getElementById('authName').value.trim() || email.split('@')[0];
+  currentUser = {email, name};
+  try{ localStorage.setItem('devhub_account', JSON.stringify(currentUser)); }catch(e){}
+  updateAuthUI();
+  closeModal('authBackdrop');
+  showToast(authMode==='register' ? `Аккаунт создан, добро пожаловать, ${name}!` : `С возвращением, ${name}!`);
+});
+function updateAuthUI(){
+  const btn = document.getElementById('openAuthBtn');
+  if(currentUser){
+    btn.outerHTML = `<div class="avatar-chip" id="openAuthBtn">${currentUser.name[0].toUpperCase()}&nbsp;${currentUser.name}</div>`;
+    document.getElementById('scopeAccountHint').textContent = 'вход выполнен';
+  }
+}
+try{ const savedAcc = JSON.parse(localStorage.getItem('devhub_account')); if(savedAcc){ currentUser = savedAcc; } }catch(e){}
+
+/* ===================== PROFILE EDITOR ===================== */
+document.querySelectorAll('#editorTabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#editorTabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    document.querySelectorAll('.editor-pane').forEach(p=>p.classList.remove('on'));
+    document.getElementById('pane-'+b.dataset.pane).classList.add('on');
+  });
+});
+
+function renderBgGrid(){
+  document.getElementById('bgGrid').innerHTML = bgOptions.map(b=>`<div class="bg-opt ${state.profile.bg===b.id?'selected':''}" data-bg="${b.id}"><div class="thumb"></div>${b.name}</div>`).join('');
+  document.querySelectorAll('.bg-opt').forEach(el=>el.addEventListener('click', ()=>{
+    state.profile.bg = el.dataset.bg; state.profile.bgCustom = null;
+    setActiveBgOption(el.dataset.bg); applyBackground(el.dataset.bg);
+  }));
+}
+function setActiveBgOption(id){ document.querySelectorAll('.bg-opt').forEach(el=>el.classList.toggle('selected', el.dataset.bg===id)); }
+
+document.getElementById('bgUploadBtn').addEventListener('click', ()=>document.getElementById('bgUpload').click());
+document.getElementById('bgUpload').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const url = URL.createObjectURL(f);
+  state.profile.bg = 'custom'; state.profile.bgCustom = url;
+  applyBackground(null, url);
+  showToast('Свой фон применён (сохраняется только на время сессии)');
+});
+
+function renderMusicGrid(){
+  document.getElementById('musicGrid').innerHTML = musicOptions.map(m=>`<div class="music-opt ${state.profile.track===m.id?'selected':''}" data-track="${m.id}">🎵 ${m.name}</div>`).join('');
+  document.querySelectorAll('.music-opt').forEach(el=>el.addEventListener('click', ()=>{ playTrack(el.dataset.track); setActiveMusicOption(el.dataset.track); }));
+}
+function setActiveMusicOption(id){ document.querySelectorAll('.music-opt').forEach(el=>el.classList.toggle('selected', el.dataset.track===id)); }
+function playTrack(id, autoStart){
+  const audioEl = document.getElementById('audioEl');
+  const opt = musicOptions.find(m=>m.id===id);
+  state.profile.track = id; state.profile.trackCustom = null;
+  if(!opt || !opt.file){ audioEl.pause(); audioEl.src=''; document.getElementById('nowPlaying').textContent = 'Ничего не выбрано'; return; }
+  audioEl.src = opt.file; audioEl.volume = (state.profile.volume||44)/100;
+  document.getElementById('nowPlaying').textContent = opt.name;
+  if(autoStart || state.profile.autoplay) audioEl.play().catch(()=>{});
+}
+document.getElementById('musicUploadBtn').addEventListener('click', ()=>document.getElementById('musicUpload').click());
+document.getElementById('musicUpload').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const url = URL.createObjectURL(f);
+  const audioEl = document.getElementById('audioEl');
+  audioEl.src = url; state.profile.track = 'custom'; state.profile.trackCustom = url; state.profile.trackName = f.name;
+  document.getElementById('nowPlaying').textContent = f.name;
+  setActiveMusicOption(null);
+  showToast('Свой трек добавлен (сохраняется только на время сессии)');
+});
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  const audioEl = document.getElementById('audioEl');
+  if(!audioEl.src){ showToast('Сначала выберите трек'); return; }
+  if(audioEl.paused){ audioEl.play(); document.getElementById('playBtn').textContent='❚❚'; }
+  else{ audioEl.pause(); document.getElementById('playBtn').textContent='▶'; }
+});
+['rVolume','miniVolume'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', e=>{
+    const v = e.target.value;
+    document.getElementById('audioEl').volume = v/100;
+    state.profile.volume = +v;
+    document.getElementById('rVolumeVal').textContent = v+'%';
+    document.getElementById('rVolume').value = v; document.getElementById('miniVolume').value = v;
+  });
+});
+document.getElementById('tAutoplay').addEventListener('change', e=>{ state.profile.autoplay = e.target.checked; });
+
+document.querySelectorAll('#effectGrid .effect-opt').forEach(el=>el.addEventListener('click', ()=>{
+  document.querySelectorAll('#effectGrid .effect-opt').forEach(x=>x.classList.remove('selected')); el.classList.add('selected');
+  state.profile.bgFx = el.dataset.fx; startBgEffect(el.dataset.fx);
+}));
+document.querySelectorAll('#nameEffectGrid .effect-opt').forEach(el=>el.addEventListener('click', ()=>{
+  document.querySelectorAll('#nameEffectGrid .effect-opt').forEach(x=>x.classList.remove('selected')); el.classList.add('selected');
+  state.profile.nameFx = el.dataset.nfx; updatePreview();
+}));
+
+document.getElementById('rDim').addEventListener('input', e=>{ state.profile.dim=+e.target.value; document.getElementById('rDimVal').textContent=e.target.value+'%'; document.getElementById('bgDim').style.opacity = e.target.value/100; });
+document.getElementById('rOpacity').addEventListener('input', e=>{ state.profile.opacity=+e.target.value; document.getElementById('rOpacityVal').textContent=e.target.value+'%'; updatePreviewLook(); });
+document.getElementById('rBlur').addEventListener('input', e=>{ state.profile.blur=+e.target.value; document.getElementById('rBlurVal').textContent=e.target.value+'px'; updatePreviewLook(); });
+document.getElementById('rRadius').addEventListener('input', e=>{ state.profile.radius=+e.target.value; document.getElementById('rRadiusVal').textContent=e.target.value+'px'; updatePreviewLook(); });
+document.querySelectorAll('#avatarShape button').forEach(b=>b.addEventListener('click', ()=>{
+  document.querySelectorAll('#avatarShape button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  state.profile.avatarShape = b.dataset.shape; updatePreview();
+}));
+document.getElementById('tRing').addEventListener('change', e=>{ state.profile.ring = e.target.checked; updatePreview(); });
+document.getElementById('tTilt').addEventListener('change', e=>{ state.profile.tilt = e.target.checked; });
+document.getElementById('tCrown').addEventListener('change', e=>{ state.profile.crown = e.target.checked; updatePreview(); });
+
+document.getElementById('avatarBtn').addEventListener('click', ()=>document.getElementById('avatarInput').click());
+document.getElementById('avatarInput').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const url = URL.createObjectURL(f); state.profile.avatar = url;
+  document.getElementById('avatarPreviewSmall').src = url; document.getElementById('avatarPreviewSmall').style.display='block';
+  document.getElementById('avatarPh').style.display='none';
+  updatePreview();
+});
+
+['pName','pHandle','pBio','pLoc'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', e=>{
+    const key = {pName:'name',pHandle:'handle',pBio:'bio',pLoc:'loc'}[id];
+    state.profile[key] = e.target.value; updatePreview();
+  });
+});
+document.getElementById('statDownloads').addEventListener('input', e=>{ state.profile.statDownloads = +e.target.value; updatePreview(); });
+document.getElementById('statSuggestions').addEventListener('input', e=>{ state.profile.statSuggestions = +e.target.value; updatePreview(); });
+
+const socialIcons = {twitter:'🐦', telegram:'✈️', discord:'🎮', tiktok:'🎵', github:'💻', site:'🔗', youtube:'▶️', soundcloud:'☁️'};
+function renderLinksList(){
+  document.getElementById('linksList').innerHTML = state.profile.links.map((l,i)=>`
+    <div class="link-row">
+      <select data-i="${i}" class="linkType">${Object.keys(socialIcons).map(k=>`<option value="${k}" ${l.type===k?'selected':''}>${k}</option>`).join('')}</select>
+      <input data-i="${i}" class="linkUrl" value="${l.url||''}" placeholder="https://…">
+      <button class="btn btn-ghost btn-sm linkDel" data-i="${i}">✕</button>
+    </div>`).join('');
+  document.querySelectorAll('.linkType').forEach(s=>s.addEventListener('change', e=>{ state.profile.links[+e.target.dataset.i].type = e.target.value; updatePreview(); }));
+  document.querySelectorAll('.linkUrl').forEach(s=>s.addEventListener('input', e=>{ state.profile.links[+e.target.dataset.i].url = e.target.value; updatePreview(); }));
+  document.querySelectorAll('.linkDel').forEach(s=>s.addEventListener('click', e=>{ state.profile.links.splice(+e.target.dataset.i,1); renderLinksList(); updatePreview(); }));
+}
+document.getElementById('addLinkBtn').addEventListener('click', ()=>{
+  if(state.profile.links.length>=6){ showToast('Максимум 6 ссылок'); return; }
+  state.profile.links.push({type:'site', url:''}); renderLinksList(); updatePreview();
+});
+
+function updatePreviewLook(){
+  const card = document.getElementById('previewCard');
+  card.style.setProperty('background', `color-mix(in srgb, var(--surface) ${state.profile.opacity}%, transparent)`);
+  card.style.setProperty('backdrop-filter', `blur(${state.profile.blur}px) saturate(160%)`);
+  card.style.borderRadius = state.profile.radius + 'px';
+}
+function updatePreview(){
+  document.getElementById('previewName').textContent = state.profile.name || 'Ваше имя';
+  document.getElementById('previewHandle').textContent = state.profile.handle ? '@'+state.profile.handle.replace('@','') : '@username';
+  document.getElementById('previewBio').textContent = state.profile.bio || 'Пара строк о себе появится здесь.';
+  document.getElementById('previewLoc').textContent = '📍 ' + (state.profile.loc || '—');
+  document.getElementById('previewDownloads').textContent = state.profile.statDownloads || 0;
+  document.getElementById('previewSuggestions').textContent = state.profile.statSuggestions || 0;
+
+  const av = document.getElementById('previewAvatar');
+  av.className = 'preview-avatar ' + state.profile.avatarShape + (state.profile.ring ? '' : '');
+  av.style.boxShadow = state.profile.ring ? '0 0 0 3px var(--primary)' : 'none';
+  if(state.profile.avatar) av.innerHTML = `<img src="${state.profile.avatar}">`;
+  else av.innerHTML = `<span>${(state.profile.name||'A')[0].toUpperCase()}</span>`;
+
+  const nameEl = document.getElementById('previewName');
+  nameEl.style.cssText='';
+  if(state.profile.nameFx==='glow') nameEl.style.textShadow = '0 0 14px var(--primary)';
+  if(state.profile.nameFx==='gradient'){ nameEl.style.background='linear-gradient(120deg,var(--a),var(--b))'; nameEl.style.webkitBackgroundClip='text'; nameEl.style.backgroundClip='text'; nameEl.style.color='transparent'; }
+
+  document.getElementById('previewSocials').innerHTML = state.profile.links.filter(l=>l.url).map(l=>`<a href="${l.url}" target="_blank" rel="noopener" title="${l.type}">${socialIcons[l.type]||'🔗'}</a>`).join('') || '<span style="font-size:11px;color:var(--faint)">Ссылок пока нет</span>';
+
+  updatePreviewLook();
+}
+function saveProfileLocal(){
+  try{
+    const toSave = Object.assign({}, state.profile);
+    delete toSave.avatar; delete toSave.bgCustom; delete toSave.trackCustom; // blob URLs die on reload, skip persisting them
+    localStorage.setItem('devhub_profile', JSON.stringify(toSave));
+  }catch(e){}
+}
+document.getElementById('profileSave').addEventListener('click', ()=>{
+  saveProfileLocal();
+  document.getElementById('profileSaveHint').textContent = 'Сохранено ✓';
+  setTimeout(()=>document.getElementById('profileSaveHint').textContent='Изменения видно в превью сразу', 1800);
+  showToast('Профиль сохранён локально');
+});
+
+/* ===================== BACKGROUND CANVAS EFFECTS ===================== */
+let fxAnim = null;
+function startBgEffect(type){
+  const canvas = document.getElementById('bgEffect');
+  const ctx = canvas.getContext('2d');
+  cancelAnimationFrame(fxAnim);
+  function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+  resize(); window.onresize = resize;
+  if(type==='none'){ ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+  let particles = [];
+  const count = type==='stars'?140:type==='snow'?90:type==='rain'?110:60;
+  for(let i=0;i<count;i++){
+    particles.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2+0.5, v:Math.random()*1.4+0.4, o:Math.random()*0.6+0.2});
+  }
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(type==='grid'){
+      ctx.strokeStyle='rgba(150,150,255,0.15)'; ctx.lineWidth=1;
+      const g=40;
+      for(let x=0;x<canvas.width;x+=g){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+      for(let y=0;y<canvas.height;y+=g){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+    } else if(type==='aurora'){
+      const t=Date.now()/2000;
+      const grad = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+      grad.addColorStop(0,'rgba(139,124,255,0.10)'); grad.addColorStop(.5+Math.sin(t)*0.2,'rgba(34,195,238,0.10)'); grad.addColorStop(1,'rgba(178,92,240,0.10)');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,canvas.width,canvas.height);
+    } else {
+      particles.forEach(p=>{
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${p.o})`;
+        if(type==='rain'){ ctx.fillRect(p.x,p.y,1,10); p.y += p.v*6; }
+        else { ctx.arc(p.x,p.y,p.s,0,7); ctx.fill(); p.y += p.v; }
+        if(p.y>canvas.height){ p.y=-10; p.x=Math.random()*canvas.width; }
+      });
+    }
+    fxAnim = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ===================== REQUESTS -> OUTBOX (Telegram relay stub) ===================== */
+let reqType = 'add';
+document.querySelectorAll('#reqType button').forEach(b=>{
+  b.addEventListener('click', ()=>{ document.querySelectorAll('#reqType button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); reqType=b.dataset.type; });
+});
+/*
+  ВАЖНО: токен Telegram-бота НИКОГДА не должен попадать в клиентский код.
+  Реальная схема:
+    1) fetch('/api/report', {method:'POST', body: JSON.stringify(payload)})
+    2) Сервер (Node / Cloudflare Worker / Vercel Function) берёт TELEGRAM_BOT_TOKEN
+       из переменных окружения и вызывает https://api.telegram.org/bot<TOKEN>/sendMessage
+    3) Сервер отвечает {ok:true} фронтенду.
+  GitHub Pages отдаёт только статику — /api/report там не заработает,
+  поэтому нужен отдельный маленький бэкенд (Worker/Function), см. пояснение в чате.
+*/
+async function sendToBackend(payload){
+  if(!REPORT_ENDPOINT || REPORT_ENDPOINT.includes('YOUR-WORKER-NAME')) return {ok:false};
+  try{ const res = await fetch(REPORT_ENDPOINT, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}); if(!res.ok) throw 0; return {ok:true}; }
+  catch(e){ return {ok:false}; }
+}
+document.getElementById('reqSubmit').addEventListener('click', async ()=>{
+  const name = document.getElementById('reqName').value.trim();
+  const link = document.getElementById('reqLink').value.trim();
+  const comment = document.getElementById('reqComment').value.trim();
+  const contact = document.getElementById('reqContact').value.trim();
+  if(!name){ showToast('Укажите название приложения'); return; }
+  const typeLabels = {add:'Добавить приложение', remove:'Удалить приложение', complaint:'Жалоба'};
+  const payload = {type:reqType, name, link, comment, contact, user: currentUser?currentUser.email:null, ts:Date.now()};
+  const result = await sendToBackend(payload);
+  outbox.unshift({title:`${typeLabels[reqType]}: ${name}`, sub: comment||link||'Без комментария', status: result.ok?'sent':'pending', time:new Date().toLocaleString('ru-RU')});
+  try{ localStorage.setItem('devhub_outbox', JSON.stringify(outbox.slice(0,50))); }catch(e){}
+  state.profile.statSuggestions = (state.profile.statSuggestions||0) + 1;
+  saveProfileLocal(); updatePreview();
+  showToast(result.ok ? 'Заявка отправлена в Telegram' : 'Бэкенд не подключён — заявка сохранена локально');
+  ['reqName','reqLink','reqComment','reqContact'].forEach(id=>document.getElementById(id).value='');
+  renderOutbox();
+});
+function renderOutbox(){
+  const list = document.getElementById('outboxList');
+  if(!outbox.length){ list.innerHTML = `<div class="empty-state">Пока пусто — отправьте заявку во вкладке «Заявки».</div>`; return; }
+  list.innerHTML = outbox.map(o=>`<div class="outbox-item card glass"><span class="outbox-dot ${o.status}"></span>
+    <div style="flex:1"><div class="outbox-title">${o.title}</div><div class="outbox-sub">${o.sub}</div></div>
+    <span class="outbox-time">${o.status==='sent'?'Доставлено':'Ожидает бэкенд'} · ${o.time}</span></div>`).join('');
+}
+document.getElementById('clearOutbox').addEventListener('click', ()=>{
+  outbox = []; try{ localStorage.removeItem('devhub_outbox'); }catch(e){} renderOutbox(); showToast('История уведомлений очищена');
+});
+
+/* ===================== LANG / TZ ===================== */
+document.getElementById('langSelect').addEventListener('change', e=>{ state.lang=e.target.value; showToast(e.target.value==='ru'?'Язык переключён на русский':'Language switched to English'); });
+document.getElementById('tzSelect').addEventListener('change', e=>{ state.tz=e.target.value; showToast('Часовой пояс обновлён: '+e.target.selectedOptions[0].textContent); });
+
+/* ===================== TOAST ===================== */
+let toastTimer;
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3200); }
+
+/* ===================== INIT ===================== */
+document.getElementById('tzSelect').value = state.tz;
+document.documentElement.setAttribute('data-theme', state.theme);
+renderAndroid();
+renderOutbox();
+renderBgGrid();
+renderMusicGrid();
+renderLinksList();
+applyBackground(state.profile.bg);
+startBgEffect(state.profile.bgFx || 'none');
+updatePreview();
+if(state.profile.name) document.getElementById('pName').value = state.profile.name;
+if(state.profile.handle) document.getElementById('pHandle').value = state.profile.handle;
+if(state.profile.bio) document.getElementById('pBio').value = state.profile.bio;
+if(state.profile.loc) document.getElementById('pLoc').value = state.profile.loc;
+document.getElementById('statDownloads').value = state.profile.statDownloads||0;
+document.getElementById('statSuggestions').value = state.profile.statSuggestions||0;
+if(currentUser) updateAuthUI();
+</script>
+</body>
+</html>

@@ -569,21 +569,47 @@ try{
 }
 
 /* ===================== DATA ===================== */
-const androidApps = [
-  {id:'a1', icon:'💬', name:'Termux', author:'Termux Team', rating:4.7, cat:'dev', desc:'Полноценный Linux-терминал на Android без root.',
-   versions:{'1.4.0':['arm64-v8a','armeabi-v7a'], '1.3.2':['arm64-v8a']}},
-  {id:'a2', icon:'📝', name:'Acode', author:'Acode Foundation', rating:4.5, cat:'dev', desc:'Редактор кода с подсветкой синтаксиса и Git.',
-   versions:{'1.10.0':['arm64-v8a','armeabi-v7a','x86_64'], '1.9.4':['arm64-v8a','armeabi-v7a']}},
-  {id:'a3', icon:'🐳', name:'Docker Client', author:'Community', rating:4.3, cat:'net', desc:'Управление удалёнными Docker-контейнерами с телефона.',
-   versions:{'2.2.0':['arm64-v8a']}},
-  {id:'a4', icon:'🗄', name:'DB Client Mobile', author:'DBeaver Corp', rating:4.4, cat:'db', desc:'Просмотр и редактирование баз данных на ходу.',
-   versions:{'1.5.0':['arm64-v8a','x86_64'], '1.4.0':['arm64-v8a','armeabi-v7a','x86_64']}},
-  {id:'a5', icon:'📡', name:'Net Analyzer', author:'OpenSource', rating:4.6, cat:'net', desc:'Анализ Wi-Fi сетей и сканирование портов.',
-   versions:{'3.1.0':['arm64-v8a','armeabi-v7a','x86','x86_64']}},
-  {id:'a6', icon:'✉', name:'API Tester', author:'DevKit', rating:4.5, cat:'dev', desc:'Отправка REST-запросов и просмотр ответов на телефоне.',
-   versions:{'2.0.1':['arm64-v8a','armeabi-v7a']}},
-];
+/* Каталог теперь читается из Supabase (таблицы apps + app_versions), а не из хардкода.
+   Структура объекта в androidApps сохранена прежней (id, icon, name, author, rating, cat, desc, versions),
+   чтобы весь код рендеринга ниже (androidCardHTML, renderAndroid, фильтры) остался без изменений. */
+let androidApps = [];
 const ALL_ARCHS = ['arm64-v8a','armeabi-v7a','x86_64','x86'];
+
+async function loadCatalogFromSupabase(){
+  if(!sbClient){ console.warn('sbClient не инициализирован — каталог не загружен'); return; }
+  const { data, error } = await sbClient
+    .from('apps')
+    .select('id, name, author, description, category, icon, rating, github_url, status, app_versions(version, architectures, created_at)')
+    .eq('status', 'approved')
+    .order('created_at', { ascending: true });
+
+  if(error){
+    console.error('Ошибка загрузки каталога из Supabase:', error);
+    showToast('Не удалось загрузить каталог приложений');
+    return;
+  }
+
+  androidApps = (data || []).map(row => {
+    const versions = {};
+    (row.app_versions || [])
+      .slice()
+      .sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)) // новая версия первой в списке
+      .forEach(v => { versions[v.version] = v.architectures || []; });
+    return {
+      id: row.id,
+      icon: row.icon || '📦',
+      name: row.name,
+      author: row.author || '—',
+      rating: row.rating ?? 5,
+      cat: row.category || 'other',
+      desc: row.description || '',
+      githubUrl: row.github_url || null,
+      versions: Object.keys(versions).length ? versions : {'—':[]},
+    };
+  });
+
+  renderAndroid();
+}
 
 const bgOptions = [
   {id:'sakura', name:'Sakura', file:'bg/sakura.mp4'},
@@ -1175,7 +1201,7 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 /* ===================== INIT ===================== */
 document.getElementById('tzSelect').value = state.tz;
 document.documentElement.setAttribute('data-theme', state.theme);
-renderAndroid();
+loadCatalogFromSupabase();
 renderOutbox();
 renderBgGrid();
 renderMusicGrid();

@@ -550,10 +550,23 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
    const REPORT_ENDPOINT = 'https://devhub-relay.cryptomail14dash.workers.dev';
 
 /* ===================== SUPABASE ===================== */
-/* Publishable key безопасен для браузера (используется вместе с RLS-политиками). */
+/* Publishable key безопасен для браузера (используется вместе с RLS-политиками).
+   Инициализация обёрнута в try/catch: если CDN с Supabase SDK недоступен
+   (например, заблокирован в браузере пользователя), остальной сайт
+   (каталог, кнопки, темы) всё равно должен работать нормально. */
 const SUPABASE_URL = 'https://nnuauvwjeiewituexgsj.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_H993QAi7e7uhkL_UfF-uRA_cDIHdcoM';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let supabase = null;
+try{
+  if(window.supabase && typeof window.supabase.createClient === 'function'){
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  } else {
+    console.error('Supabase SDK не загрузился — авторизация будет недоступна, остальной сайт работает.');
+  }
+}catch(e){
+  console.error('Ошибка инициализации Supabase:', e);
+  supabase = null;
+}
 
 /* ===================== DATA ===================== */
 const androidApps = [
@@ -772,6 +785,7 @@ document.getElementById('footAuth').addEventListener('click', e=>{
 });
 
 document.getElementById('authSubmit').addEventListener('click', async ()=>{
+  if(!supabase){ showToast('Сервис аккаунтов недоступен (не загрузился Supabase). Попробуйте обновить страницу.'); return; }
   const email = document.getElementById('authEmail').value.trim();
   const pass = document.getElementById('authPass').value;
   if(!email || !pass){ showToast('Заполните email и пароль'); return; }
@@ -809,6 +823,7 @@ document.getElementById('authTelegramBtn').addEventListener('click', ()=>{
 });
 
 async function signOutUser(){
+  if(!supabase){ showToast('Сервис аккаунтов недоступен'); return; }
   await supabase.auth.signOut();
   showToast('Вы вышли из аккаунта');
 }
@@ -839,16 +854,18 @@ function mapSupabaseUser(user){
 }
 
 /* Восстанавливаем сессию при загрузке страницы (Supabase сам хранит токен) */
-supabase.auth.getSession().then(({ data: { session } })=>{
-  currentUser = mapSupabaseUser(session?.user);
-  updateAuthUI();
-});
+if(supabase){
+  supabase.auth.getSession().then(({ data: { session } })=>{
+    currentUser = mapSupabaseUser(session?.user);
+    updateAuthUI();
+  });
 
-/* Реагируем на вход/выход/обновление токена в реальном времени */
-supabase.auth.onAuthStateChange((_event, session)=>{
-  currentUser = mapSupabaseUser(session?.user);
-  updateAuthUI();
-});
+  /* Реагируем на вход/выход/обновление токена в реальном времени */
+  supabase.auth.onAuthStateChange((_event, session)=>{
+    currentUser = mapSupabaseUser(session?.user);
+    updateAuthUI();
+  });
+}
 
 /* ===================== PROFILE EDITOR ===================== */
 document.querySelectorAll('#editorTabs button').forEach(b=>{

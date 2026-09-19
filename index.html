@@ -654,7 +654,7 @@ const themes = [
 let state = {
   theme:'night', lang:'ru', tz:'Europe/Moscow',
   profile:{name:'', handle:'', bio:'', loc:'', avatar:null, opacity:58, blur:22, radius:26, avatarShape:'circle', ring:false,
-    bg:'none', bgCustom:null, dim:72, bgFx:'none', track:'none', trackCustom:null, trackName:null, autoplay:false, volume:44,
+    bg:'none', bgCustom:null, bgType:null, dim:72, bgFx:'none', track:'none', trackCustom:null, trackName:null, autoplay:false, volume:44,
     nameFx:'none', tilt:false, crown:false, links:[], statDownloads:0, statSuggestions:0},
 };
 let currentUser = null;
@@ -719,7 +719,7 @@ function renderAndroid(){
       const app = androidApps.find(a=>a.id===btn.dataset.app);
       const sel = document.querySelector(`.version-sel[data-app="${app.id}"]`);
       state.profile.statDownloads = (state.profile.statDownloads||0) + 1;
-      saveProfileLocal();
+      persistProfile();
       updatePreview();
       const target = app.apkUrl || (app.githubUrl ? app.githubUrl.replace(/\/$/,'') + '/releases' : null);
       if(target){
@@ -747,16 +747,23 @@ document.querySelectorAll('#pills .pill').forEach(p=>{
 const bgVideoEl = document.createElement('video');
 bgVideoEl.muted = true; bgVideoEl.loop = true; bgVideoEl.playsInline = true; bgVideoEl.autoplay = true;
 
-function applyBackground(id, customUrl){
+function applyBackground(id, customUrl, customType){
   const layer = document.getElementById('bgVideoLayer');
   layer.innerHTML = '';
   let src = customUrl;
-  if(!src){ const opt = bgOptions.find(b=>b.id===id); src = opt ? opt.file : null; }
+  let isImage = customType === 'image';
+  if(!src){ const opt = bgOptions.find(b=>b.id===id); src = opt ? opt.file : null; isImage = false; }
   if(src){
-    const v = document.createElement('video');
-    v.src = src; v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true;
-    v.play().catch(()=>{});
-    layer.appendChild(v);
+    if(isImage){
+      const img = document.createElement('img');
+      img.src = src; img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      layer.appendChild(img);
+    } else {
+      const v = document.createElement('video');
+      v.src = src; v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true;
+      v.play().catch(()=>{});
+      layer.appendChild(v);
+    }
   }
   document.getElementById('bgDim').style.opacity = (state.profile.dim||72)/100;
 }
@@ -918,7 +925,10 @@ function updateAuthUI(){
   if(!btn) return;
   if(currentUser){
     btn.className = 'avatar-chip';
-    btn.innerHTML = `${currentUser.name[0].toUpperCase()}&nbsp;${currentUser.name}`;
+    const avatarHtml = currentUser.avatarUrl
+      ? `<img src="${currentUser.avatarUrl}" alt="">`
+      : `<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--primary-soft);align-items:center;justify-content:center;font-size:12px;">${currentUser.name[0].toUpperCase()}</span>`;
+    btn.innerHTML = `${avatarHtml}&nbsp;${currentUser.name}`;
     const hint = document.getElementById('scopeAccountHint');
     if(hint) hint.textContent = 'вход выполнен';
   } else {
@@ -934,21 +944,157 @@ function mapSupabaseUser(user){
   return {
     id: user.id,
     email: user.email,
-    name: (user.user_metadata && user.user_metadata.full_name) || (user.email ? user.email.split('@')[0] : 'Пользователь')
+    name: (user.user_metadata && user.user_metadata.full_name) || (user.email ? user.email.split('@')[0] : 'Пользователь'),
+    avatarUrl: null
   };
+}
+
+/* ===================== ХРАНИЛИЩЕ ФАЙЛОВ (Supabase Storage) ===================== */
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 МБ — общий лимит для аватарок/фонов/музыки
+
+function extFromFile(file){
+  const fromName = (file.name.split('.').pop() || '').toLowerCase();
+  if(fromName && fromName.length <= 5) return fromName;
+  return (file.type.split('/')[1] || 'bin').toLowerCase();
+}
+
+/* Загружает файл в бакет Supabase Storage в папку текущего юзера и возвращает публичный URL.
+   Бросает исключение с понятным текстом, если что-то пошло не так — вызывающий код сам решает,
+   как показать ошибку (showToast и т.п.). */
+async function uploadToBucket(bucket, file){
+  if(!sbClient) throw new Error('Сервис хранилища недоступен');
+  if(!currentUser) throw new Error('Сначала войдите в аккаунт');
+  if(file.size > MAX_UPLOAD_BYTES) throw new Error('Файл больше 20 МБ');
+
+  const path = `${currentUser.id}/${bucket}-${Date.now()}.${extFromFile(file)}`;
+  const { error: upErr } = await sbClient.storage.from(bucket).upload(path, file, {
+    cacheControl: '3600',
+    upsert: true,
+    contentType: file.type || undefined
+  });
+  if(upErr) throw new Error(upErr.message || 'Ошибка загрузки файла');
+
+  const { data } = sbClient.storage.from(bucket).getPublicUrl(path);
+  if(!data?.publicUrl) throw new Error('Не удалось получить ссылку на файл');
+  return data.publicUrl;
+}
+
+/* Подгружает профиль пользователя из таблицы profiles и раскладывает поля в state.profile */
+async function loadProfileFromSupabase(userId){
+  if(!sbClient) return;
+  const { data, error } = await sbClient.from('profiles').select('*').eq('id', userId).maybeSingle();
+  if(error){ console.error('loadProfileFromSupabase failed:', error.message); return; }
+  if(!data) return;
+
+  const c = data.customization || {};
+  Object.assign(state.profile, {
+    name: data.display_name || state.profile.name,
+    handle: data.handle || state.profile.handle,
+    bio: data.bio || state.profile.bio,
+    loc: data.location || state.profile.loc,
+    avatar: data.avatar_url || null,
+    bg: data.bg_url ? 'custom' : state.profile.bg,
+    bgCustom: data.bg_url || null,
+    bgType: data.bg_type || null,
+    track: data.track_url ? 'custom' : state.profile.track,
+    trackCustom: data.track_url || null,
+    trackName: data.track_name || null,
+    links: Array.isArray(data.links) && data.links.length ? data.links : state.profile.links,
+    statDownloads: data.stat_downloads || 0,
+    statSuggestions: data.stat_suggestions || 0,
+    opacity: c.opacity ?? state.profile.opacity,
+    blur: c.blur ?? state.profile.blur,
+    radius: c.radius ?? state.profile.radius,
+    avatarShape: c.avatarShape || state.profile.avatarShape,
+    ring: c.ring ?? state.profile.ring,
+    tilt: c.tilt ?? state.profile.tilt,
+    crown: c.crown ?? state.profile.crown,
+    nameFx: c.nameFx || state.profile.nameFx,
+    bgFx: c.bgFx || state.profile.bgFx,
+    dim: c.dim ?? state.profile.dim,
+    volume: c.volume ?? state.profile.volume,
+    autoplay: c.autoplay ?? state.profile.autoplay
+  });
+  if(currentUser) currentUser.avatarUrl = data.avatar_url || null;
+}
+
+/* Сохраняет весь профиль текущего юзера в Supabase (полный снимок state.profile) */
+async function saveProfileToSupabase(){
+  if(!sbClient || !currentUser) throw new Error('Нужно войти в аккаунт');
+  const p = state.profile;
+  const row = {
+    id: currentUser.id,
+    display_name: p.name || null,
+    handle: p.handle ? p.handle.replace('@','') : null,
+    bio: p.bio || null,
+    location: p.loc || null,
+    avatar_url: p.avatar || null,
+    bg_url: p.bg === 'custom' ? (p.bgCustom || null) : null,
+    bg_type: p.bg === 'custom' ? (p.bgType || null) : null,
+    track_url: p.track === 'custom' ? (p.trackCustom || null) : null,
+    track_name: p.track === 'custom' ? (p.trackName || null) : null,
+    links: p.links || [],
+    stat_downloads: p.statDownloads || 0,
+    stat_suggestions: p.statSuggestions || 0,
+    customization: {
+      opacity: p.opacity, blur: p.blur, radius: p.radius, avatarShape: p.avatarShape,
+      ring: p.ring, tilt: p.tilt, crown: p.crown, nameFx: p.nameFx, bgFx: p.bgFx,
+      dim: p.dim, volume: p.volume, autoplay: p.autoplay
+    }
+  };
+  const { error } = await sbClient.from('profiles').upsert(row);
+  if(error) throw new Error(error.message || 'Не удалось сохранить профиль');
+}
+
+/* Перерисовывает весь UI редактора профиля из текущего state.profile —
+   вызывается и при первой загрузке страницы, и после подгрузки профиля из облака */
+function refreshProfileEditorUI(){
+  renderBgGrid();
+  renderMusicGrid();
+  renderLinksList();
+  applyBackground(state.profile.bg==='custom' ? null : state.profile.bg, state.profile.bgCustom, state.profile.bgType);
+  if(state.profile.track==='custom' && state.profile.trackCustom){
+    const audioEl = document.getElementById('audioEl');
+    audioEl.src = state.profile.trackCustom;
+    document.getElementById('nowPlaying').textContent = state.profile.trackName || 'Свой трек';
+    setActiveMusicOption(null);
+  } else if(state.profile.track && state.profile.track!=='custom'){
+    playTrack(state.profile.track);
+    setActiveMusicOption(state.profile.track);
+  }
+  startBgEffect(state.profile.bgFx || 'none');
+  updatePreview();
+  document.getElementById('pName').value = state.profile.name || '';
+  document.getElementById('pHandle').value = state.profile.handle || '';
+  document.getElementById('pBio').value = state.profile.bio || '';
+  document.getElementById('pLoc').value = state.profile.loc || '';
+  document.getElementById('statDownloads').value = state.profile.statDownloads || 0;
+  document.getElementById('statSuggestions').value = state.profile.statSuggestions || 0;
+  if(state.profile.avatar){
+    document.getElementById('avatarPreviewSmall').src = state.profile.avatar;
+    document.getElementById('avatarPreviewSmall').style.display='block';
+    document.getElementById('avatarPh').style.display='none';
+  } else {
+    document.getElementById('avatarPreviewSmall').style.display='none';
+    document.getElementById('avatarPh').style.display='flex';
+  }
 }
 
 /* Восстанавливаем сессию при загрузке страницы (Supabase сам хранит токен) */
 if(sbClient){
-  sbClient.auth.getSession().then(({ data: { session } })=>{
+  sbClient.auth.getSession().then(async ({ data: { session } })=>{
     currentUser = mapSupabaseUser(session?.user);
+    if(currentUser) await loadProfileFromSupabase(currentUser.id);
     updateAuthUI();
+    refreshProfileEditorUI();
   });
 
   /* Реагируем на вход/выход/обновление токена в реальном времени */
-  sbClient.auth.onAuthStateChange((_event, session)=>{
+  sbClient.auth.onAuthStateChange(async (_event, session)=>{
     currentUser = mapSupabaseUser(session?.user);
+    if(currentUser) await loadProfileFromSupabase(currentUser.id);
     updateAuthUI();
+    refreshProfileEditorUI();
   });
 }
 
@@ -964,19 +1110,31 @@ document.querySelectorAll('#editorTabs button').forEach(b=>{
 function renderBgGrid(){
   document.getElementById('bgGrid').innerHTML = bgOptions.map(b=>`<div class="bg-opt ${state.profile.bg===b.id?'selected':''}" data-bg="${b.id}"><div class="thumb"></div>${b.name}</div>`).join('');
   document.querySelectorAll('.bg-opt').forEach(el=>el.addEventListener('click', ()=>{
-    state.profile.bg = el.dataset.bg; state.profile.bgCustom = null;
+    state.profile.bg = el.dataset.bg; state.profile.bgCustom = null; state.profile.bgType = null;
     setActiveBgOption(el.dataset.bg); applyBackground(el.dataset.bg);
   }));
 }
 function setActiveBgOption(id){ document.querySelectorAll('.bg-opt').forEach(el=>el.classList.toggle('selected', el.dataset.bg===id)); }
 
 document.getElementById('bgUploadBtn').addEventListener('click', ()=>document.getElementById('bgUpload').click());
-document.getElementById('bgUpload').addEventListener('change', e=>{
+document.getElementById('bgUpload').addEventListener('change', async e=>{
   const f = e.target.files[0]; if(!f) return;
-  const url = URL.createObjectURL(f);
-  state.profile.bg = 'custom'; state.profile.bgCustom = url;
-  applyBackground(null, url);
-  showToast('Свой фон применён (сохраняется только на время сессии)');
+  if(!currentUser){ showToast('Сначала войдите в аккаунт — фон загружается в облако'); e.target.value=''; return; }
+  const isVideo = f.type.startsWith('video/');
+  const localPreviewUrl = URL.createObjectURL(f);
+  state.profile.bg = 'custom'; state.profile.bgType = isVideo ? 'video' : 'image';
+  applyBackground(null, localPreviewUrl, state.profile.bgType);
+  showToast('Загружаем фон…');
+  try{
+    const publicUrl = await uploadToBucket('backgrounds', f);
+    state.profile.bgCustom = publicUrl;
+    applyBackground(null, publicUrl, state.profile.bgType);
+    await saveProfileToSupabase();
+    showToast('Фон загружен и сохранён');
+  }catch(err){
+    showToast('Ошибка загрузки фона: ' + err.message);
+  }
+  e.target.value = '';
 });
 
 function renderMusicGrid(){
@@ -994,14 +1152,24 @@ function playTrack(id, autoStart){
   if(autoStart || state.profile.autoplay) audioEl.play().catch(()=>{});
 }
 document.getElementById('musicUploadBtn').addEventListener('click', ()=>document.getElementById('musicUpload').click());
-document.getElementById('musicUpload').addEventListener('change', e=>{
+document.getElementById('musicUpload').addEventListener('change', async e=>{
   const f = e.target.files[0]; if(!f) return;
-  const url = URL.createObjectURL(f);
+  if(!currentUser){ showToast('Сначала войдите в аккаунт — трек загружается в облако'); e.target.value=''; return; }
   const audioEl = document.getElementById('audioEl');
-  audioEl.src = url; state.profile.track = 'custom'; state.profile.trackCustom = url; state.profile.trackName = f.name;
-  document.getElementById('nowPlaying').textContent = f.name;
+  const localPreviewUrl = URL.createObjectURL(f);
+  audioEl.src = localPreviewUrl; state.profile.track = 'custom'; state.profile.trackName = f.name;
+  document.getElementById('nowPlaying').textContent = f.name + ' (загрузка…)';
   setActiveMusicOption(null);
-  showToast('Свой трек добавлен (сохраняется только на время сессии)');
+  try{
+    const publicUrl = await uploadToBucket('music', f);
+    state.profile.trackCustom = publicUrl;
+    await saveProfileToSupabase();
+    document.getElementById('nowPlaying').textContent = f.name;
+    showToast('Трек загружен и сохранён');
+  }catch(err){
+    showToast('Ошибка загрузки трека: ' + err.message);
+  }
+  e.target.value = '';
 });
 document.getElementById('playBtn').addEventListener('click', ()=>{
   const audioEl = document.getElementById('audioEl');
@@ -1042,12 +1210,25 @@ document.getElementById('tTilt').addEventListener('change', e=>{ state.profile.t
 document.getElementById('tCrown').addEventListener('change', e=>{ state.profile.crown = e.target.checked; updatePreview(); });
 
 document.getElementById('avatarBtn').addEventListener('click', ()=>document.getElementById('avatarInput').click());
-document.getElementById('avatarInput').addEventListener('change', e=>{
+document.getElementById('avatarInput').addEventListener('change', async e=>{
   const f = e.target.files[0]; if(!f) return;
-  const url = URL.createObjectURL(f); state.profile.avatar = url;
-  document.getElementById('avatarPreviewSmall').src = url; document.getElementById('avatarPreviewSmall').style.display='block';
+  if(!currentUser){ showToast('Сначала войдите в аккаунт — аватар загружается в облако'); e.target.value=''; return; }
+  const localPreviewUrl = URL.createObjectURL(f);
+  document.getElementById('avatarPreviewSmall').src = localPreviewUrl; document.getElementById('avatarPreviewSmall').style.display='block';
   document.getElementById('avatarPh').style.display='none';
-  updatePreview();
+  showToast('Загружаем аватар…');
+  try{
+    const publicUrl = await uploadToBucket('avatars', f);
+    state.profile.avatar = publicUrl;
+    currentUser.avatarUrl = publicUrl;
+    updatePreview();
+    updateAuthUI();
+    await saveProfileToSupabase();
+    showToast('Аватар загружен и сохранён');
+  }catch(err){
+    showToast('Ошибка загрузки аватара: ' + err.message);
+  }
+  e.target.value = '';
 });
 
 ['pName','pHandle','pBio','pLoc'].forEach(id=>{
@@ -1112,11 +1293,30 @@ function saveProfileLocal(){
     localStorage.setItem('devhub_profile', JSON.stringify(toSave));
   }catch(e){}
 }
-document.getElementById('profileSave').addEventListener('click', ()=>{
+/* Сохраняет профиль локально всегда (даже для гостей), и дополнительно в Supabase,
+   если пользователь залогинен — тихо, без блокировки UI на каждое мелкое изменение */
+function persistProfile(){
   saveProfileLocal();
-  document.getElementById('profileSaveHint').textContent = 'Сохранено ✓';
-  setTimeout(()=>document.getElementById('profileSaveHint').textContent='Изменения видно в превью сразу', 1800);
-  showToast('Профиль сохранён локально');
+  if(currentUser && sbClient){
+    saveProfileToSupabase().catch(err=>console.error('Фоновое сохранение профиля не удалось:', err.message));
+  }
+}
+document.getElementById('profileSave').addEventListener('click', async ()=>{
+  saveProfileLocal();
+  if(currentUser && sbClient){
+    try{
+      await saveProfileToSupabase();
+      document.getElementById('profileSaveHint').textContent = 'Сохранено в облаке ✓';
+      showToast('Профиль сохранён');
+    }catch(err){
+      document.getElementById('profileSaveHint').textContent = 'Ошибка сохранения';
+      showToast('Не удалось сохранить в облако: ' + err.message);
+    }
+  } else {
+    document.getElementById('profileSaveHint').textContent = 'Сохранено локально ✓';
+    showToast('Войдите в аккаунт, чтобы профиль сохранялся в облаке');
+  }
+  setTimeout(()=>document.getElementById('profileSaveHint').textContent='Изменения видно в превью сразу', 2200);
 });
 
 /* ===================== BACKGROUND CANVAS EFFECTS ===================== */
@@ -1236,7 +1436,7 @@ document.getElementById('reqSubmit').addEventListener('click', async ()=>{
   outbox.unshift({title:summaryTitle, sub: summarySub, status: result.ok?'sent':'pending', time:new Date().toLocaleString('ru-RU')});
   try{ localStorage.setItem('devhub_outbox', JSON.stringify(outbox.slice(0,50))); }catch(e){}
   state.profile.statSuggestions = (state.profile.statSuggestions||0) + 1;
-  saveProfileLocal(); updatePreview();
+  persistProfile(); updatePreview();
   showToast(result.ok ? 'Заявка отправлена' : 'Не удалось отправить — заявка сохранена локально');
   ['reqName','reqLink','reqGithub','reqComment','reqContact','reqWhatWrong','reqExpected'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   renderOutbox();
@@ -1265,18 +1465,7 @@ document.getElementById('tzSelect').value = state.tz;
 document.documentElement.setAttribute('data-theme', state.theme);
 loadCatalogFromSupabase();
 renderOutbox();
-renderBgGrid();
-renderMusicGrid();
-renderLinksList();
-applyBackground(state.profile.bg);
-startBgEffect(state.profile.bgFx || 'none');
-updatePreview();
-if(state.profile.name) document.getElementById('pName').value = state.profile.name;
-if(state.profile.handle) document.getElementById('pHandle').value = state.profile.handle;
-if(state.profile.bio) document.getElementById('pBio').value = state.profile.bio;
-if(state.profile.loc) document.getElementById('pLoc').value = state.profile.loc;
-document.getElementById('statDownloads').value = state.profile.statDownloads||0;
-document.getElementById('statSuggestions').value = state.profile.statSuggestions||0;
+refreshProfileEditorUI();
 </script>
 </body>
 </html>

@@ -477,7 +477,8 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
           <select id="reqAppSelect"></select>
         </div>
         <div class="field" id="reqNameWrap"><label>Название приложения</label><input id="reqName" placeholder="Например, Acode"></div>
-        <div class="field" id="reqLinkWrap"><label>Ссылка</label><input id="reqLink" placeholder="https://…"></div>
+        <div class="field" id="reqLinkWrap"><label>Ссылка (офиц. сайт / файл)</label><input id="reqLink" placeholder="https://…"></div>
+        <div class="field" id="reqGithubWrap"><label>Исходный код (GitHub)</label><input id="reqGithub" placeholder="https://github.com/user/repo — или «-», если исходников нет"></div>
         <div class="field" id="reqCommentWrap"><label>Комментарий</label><textarea id="reqComment" placeholder="Опишите причину…"></textarea></div>
         <div class="field" id="reqWhatWrongWrap" style="display:none;"><label>Что неправильно?</label><textarea id="reqWhatWrong" placeholder="Например: указана неверная версия Android"></textarea></div>
         <div class="field" id="reqExpectedWrap" style="display:none;"><label>Как должно быть?</label><textarea id="reqExpected" placeholder="Правильная информация или предложение по исправлению"></textarea></div>
@@ -586,7 +587,7 @@ async function loadCatalogFromSupabase(){
   if(!sbClient){ console.warn('sbClient не инициализирован — каталог не загружен'); return; }
   const { data, error } = await sbClient
     .from('apps')
-    .select('id, name, author, description, category, icon, rating, github_url, status, app_versions(version, architectures, created_at)')
+    .select('id, name, author, description, category, icon, rating, github_url, apk_url, status, app_versions(version, architectures, created_at)')
     .eq('status', 'approved')
     .order('created_at', { ascending: true });
 
@@ -611,6 +612,7 @@ async function loadCatalogFromSupabase(){
       cat: row.category || 'other',
       desc: row.description || '',
       githubUrl: row.github_url || null,
+      apkUrl: row.apk_url || null,
       versions: Object.keys(versions).length ? versions : {'—':[]},
     };
   });
@@ -719,7 +721,13 @@ function renderAndroid(){
       state.profile.statDownloads = (state.profile.statDownloads||0) + 1;
       saveProfileLocal();
       updatePreview();
-      showToast(`«${app.name}» v${sel.value} — загрузка начнётся после подключения бэкенда раздачи файлов.`);
+      const target = app.apkUrl || (app.githubUrl ? app.githubUrl.replace(/\/$/,'') + '/releases' : null);
+      if(target){
+        window.open(target, '_blank', 'noopener');
+        showToast(`«${app.name}» v${sel.value} — открываю страницу загрузки`);
+      } else {
+        showToast(`«${app.name}» v${sel.value} — ссылка на файл пока не добавлена`);
+      }
     });
   });
 }
@@ -1160,6 +1168,7 @@ function updateReqFieldsVisibility(){
   document.getElementById('reqAppSelectWrap').style.display = needsAppSelect ? '' : 'none';
   document.getElementById('reqNameWrap').style.display = isAdd ? '' : 'none';
   document.getElementById('reqLinkWrap').style.display = isAdd ? '' : 'none';
+  document.getElementById('reqGithubWrap').style.display = isAdd ? '' : 'none';
   document.getElementById('reqCommentWrap').style.display = isBug ? 'none' : '';
   document.getElementById('reqWhatWrongWrap').style.display = isBug ? '' : 'none';
   document.getElementById('reqExpectedWrap').style.display = isBug ? '' : 'none';
@@ -1214,9 +1223,11 @@ document.getElementById('reqSubmit').addEventListener('click', async ()=>{
   } else {
     const name = document.getElementById('reqName').value.trim();
     const link = document.getElementById('reqLink').value.trim();
+    const githubRaw = document.getElementById('reqGithub').value.trim();
+    const githubUrl = (githubRaw === '' || githubRaw === '-') ? null : githubRaw;
     const comment = document.getElementById('reqComment').value.trim();
     if(!name){ showToast('Укажите название приложения'); return; }
-    payload = {type:reqType, name, link, comment, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.name:null, ts:Date.now()};
+    payload = {type:reqType, name, link, githubUrl, comment, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.name:null, ts:Date.now()};
     summaryTitle = `${typeLabels[reqType]}: ${name}`;
     summarySub = comment||link||'Без комментария';
   }
@@ -1227,7 +1238,7 @@ document.getElementById('reqSubmit').addEventListener('click', async ()=>{
   state.profile.statSuggestions = (state.profile.statSuggestions||0) + 1;
   saveProfileLocal(); updatePreview();
   showToast(result.ok ? 'Заявка отправлена' : 'Не удалось отправить — заявка сохранена локально');
-  ['reqName','reqLink','reqComment','reqContact','reqWhatWrong','reqExpected'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['reqName','reqLink','reqGithub','reqComment','reqContact','reqWhatWrong','reqExpected'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   renderOutbox();
 });
 function renderOutbox(){

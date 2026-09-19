@@ -142,7 +142,7 @@ section{padding:44px 0;}
 /* ---- notifications ---- */
 .outbox-item{display:flex; gap:12px; align-items:flex-start; padding:14px; border-radius:14px; margin-bottom:10px;}
 .outbox-dot{width:9px; height:9px; border-radius:50%; margin-top:6px; flex:none; background:var(--faint);}
-.outbox-dot.sent{background:#3BD481;} .outbox-dot.pending{background:var(--star);}
+.outbox-dot.sent{background:#3BD481;} .outbox-dot.pending{background:var(--star);} .outbox-dot.rejected{background:#E5484D;}
 .outbox-title{font-weight:700; font-size:13.5px;} .outbox-sub{font-size:12px; color:var(--muted); margin-top:2px;}
 .outbox-time{margin-left:auto; font-size:11px; color:var(--faint); white-space:nowrap;}
 .empty-state{text-align:center; padding:50px 20px; color:var(--faint);}
@@ -236,6 +236,14 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
 
 @media (max-width:900px){ .tabs{display:none;} }
 @media (max-width:600px){ .foot-grid{flex-direction:column;} .bg-grid,.music-grid{grid-template-columns:repeat(2,1fr);} .effect-grid{grid-template-columns:repeat(3,1fr);} }
+@media (max-width:640px){
+  html, body{ overflow-x:hidden; }
+  .topbar{ top:8px; }
+  .topbar-inner{ padding:8px 10px; gap:6px; }
+  #langSelect, #tzSelect{ display:none; }
+  .top-right{ gap:6px; }
+  .avatar-chip .chip-name{ display:none; }
+}
 </style>
 </head>
 <body>
@@ -675,6 +683,7 @@ function showView(name){
   document.getElementById('view-'+name).classList.add('visible');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
   window.scrollTo({top:0, behavior:'smooth'});
+  if(name==='notifications') renderOutbox();
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>showView(t.dataset.view)));
 document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click', e=>{e.preventDefault(); showView(el.dataset.goto);}));
@@ -934,7 +943,7 @@ function updateAuthUI(){
     const avatarHtml = currentUser.avatarUrl
       ? `<img src="${currentUser.avatarUrl}" alt="">`
       : `<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--primary-soft);align-items:center;justify-content:center;font-size:12px;">${currentUser.name[0].toUpperCase()}</span>`;
-    btn.innerHTML = `${avatarHtml}&nbsp;${currentUser.name}`;
+    btn.innerHTML = `${avatarHtml}&nbsp;<span class="chip-name">${currentUser.name}</span>`;
     const hint = document.getElementById('scopeAccountHint');
     if(hint) hint.textContent = 'вход выполнен';
     if(signOutBtn) signOutBtn.style.display = 'inline-flex';
@@ -1064,8 +1073,10 @@ function refreshProfileEditorUI(){
   if(state.profile.track==='custom' && state.profile.trackCustom){
     const audioEl = document.getElementById('audioEl');
     audioEl.src = state.profile.trackCustom;
+    audioEl.volume = (state.profile.volume||44)/100;
     document.getElementById('nowPlaying').textContent = state.profile.trackName || 'Свой трек';
-    setActiveMusicOption(null);
+    setActiveMusicOption('custom');
+    if(state.profile.autoplay) audioEl.play().catch(()=>{});
   } else if(state.profile.track && state.profile.track!=='custom'){
     playTrack(state.profile.track);
     setActiveMusicOption(state.profile.track);
@@ -1092,7 +1103,7 @@ function refreshProfileEditorUI(){
 if(sbClient){
   sbClient.auth.getSession().then(async ({ data: { session } })=>{
     currentUser = mapSupabaseUser(session?.user);
-    if(currentUser) await loadProfileFromSupabase(currentUser.id);
+    if(currentUser){ await loadProfileFromSupabase(currentUser.id); currentUser.avatarUrl = state.profile.avatar || null; if(state.profile.name) currentUser.name = state.profile.name; }
     updateAuthUI();
     refreshProfileEditorUI();
   });
@@ -1100,7 +1111,7 @@ if(sbClient){
   /* Реагируем на вход/выход/обновление токена в реальном времени */
   sbClient.auth.onAuthStateChange(async (_event, session)=>{
     currentUser = mapSupabaseUser(session?.user);
-    if(currentUser) await loadProfileFromSupabase(currentUser.id);
+    if(currentUser){ await loadProfileFromSupabase(currentUser.id); currentUser.avatarUrl = state.profile.avatar || null; if(state.profile.name) currentUser.name = state.profile.name; }
     updateAuthUI();
     refreshProfileEditorUI();
   });
@@ -1145,10 +1156,42 @@ document.getElementById('bgUpload').addEventListener('change', async e=>{
   e.target.value = '';
 });
 
-function renderMusicGrid(){
-  document.getElementById('musicGrid').innerHTML = musicOptions.map(m=>`<div class="music-opt ${state.profile.track===m.id?'selected':''}" data-track="${m.id}">🎵 ${m.name}</div>`).join('');
-  document.querySelectorAll('.music-opt').forEach(el=>el.addEventListener('click', ()=>{ playTrack(el.dataset.track); setActiveMusicOption(el.dataset.track); }));
+function escapeHtml(str){
+  return String(str==null?'':str).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
+
+function renderMusicGrid(){
+  let html = musicOptions.map(m=>`<div class="music-opt ${state.profile.track===m.id?'selected':''}" data-track="${m.id}">🎵 ${m.name}</div>`).join('');
+  if(state.profile.trackCustom){
+    html += `<div class="music-opt ${state.profile.track==='custom'?'selected':''}" data-track="custom">🎵 ${escapeHtml(state.profile.trackName||'Мой трек')}</div>`;
+  }
+  document.getElementById('musicGrid').innerHTML = html;
+  document.querySelectorAll('.music-opt').forEach(el=>el.addEventListener('click', ()=>{
+    if(el.dataset.track === 'custom'){
+      const audioEl = document.getElementById('audioEl');
+      state.profile.track = 'custom';
+      audioEl.src = state.profile.trackCustom;
+      audioEl.volume = (state.profile.volume||44)/100;
+      document.getElementById('nowPlaying').textContent = state.profile.trackName || 'Мой трек';
+      audioEl.play().catch(()=>{});
+      setActiveMusicOption('custom');
+    } else {
+      playTrack(el.dataset.track, true);
+      setActiveMusicOption(el.dataset.track);
+    }
+  }));
+}
+
+/* Браузеры блокируют autoplay со звуком, пока пользователь не взаимодействовал со страницей.
+   Ставим одноразовый обработчик: как только человек кликнет/тапнет куда угодно — пробуем доиграть. */
+(function armAutoplayFallback(){
+  const tryPlay = ()=>{
+    const audioEl = document.getElementById('audioEl');
+    if(state.profile.autoplay && audioEl && audioEl.paused && audioEl.src){ audioEl.play().catch(()=>{}); }
+  };
+  document.addEventListener('click', tryPlay, {once:true});
+  document.addEventListener('touchstart', tryPlay, {once:true});
+})();
 function setActiveMusicOption(id){ document.querySelectorAll('.music-opt').forEach(el=>el.classList.toggle('selected', el.dataset.track===id)); }
 function playTrack(id, autoStart){
   const audioEl = document.getElementById('audioEl');
@@ -1449,14 +1492,45 @@ document.getElementById('reqSubmit').addEventListener('click', async ()=>{
   ['reqName','reqLink','reqGithub','reqComment','reqContact','reqWhatWrong','reqExpected'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   renderOutbox();
 });
-function renderOutbox(){
+async function renderOutbox(){
   const list = document.getElementById('outboxList');
+  if(currentUser && sbClient){
+    list.innerHTML = `<div class="empty-state">Загружаем…</div>`;
+    const { data, error } = await sbClient
+      .from('requests')
+      .select('id, type, app_name, status, resolved_reason, created_at')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if(error){ console.error('Не удалось загрузить уведомления:', error.message); list.innerHTML = `<div class="empty-state">Не удалось загрузить — попробуйте позже.</div>`; return; }
+    if(!data || !data.length){ list.innerHTML = `<div class="empty-state">Пока пусто — отправьте заявку во вкладке «Заявки».</div>`; return; }
+    const typeLabels = {add:'Добавить приложение', remove:'Удалить приложение', bug_report:'Сообщить об ошибке', complaint:'Жалоба'};
+    const verdictMeta = {
+      pending:  {dot:'pending',  label:'🟡 На рассмотрении'},
+      approved: {dot:'sent',     label:'✅ Одобрено'},
+      rejected: {dot:'rejected', label:'❌ Отклонено'},
+    };
+    list.innerHTML = data.map(r=>{
+      const v = verdictMeta[r.status] || verdictMeta.pending;
+      const reasonLine = (r.status==='rejected' && r.resolved_reason) ? `<div class="outbox-sub">Причина: ${escapeHtml(r.resolved_reason)}</div>` : '';
+      return `<div class="outbox-item card glass"><span class="outbox-dot ${v.dot}"></span>
+        <div style="flex:1">
+          <div class="outbox-title">${typeLabels[r.type]||'Заявка'}${r.app_name ? ': '+escapeHtml(r.app_name) : ''}</div>
+          <div class="outbox-sub">${v.label}</div>
+          ${reasonLine}
+        </div>
+        <span class="outbox-time">${new Date(r.created_at).toLocaleString('ru-RU')}</span>
+      </div>`;
+    }).join('');
+    return;
+  }
   if(!outbox.length){ list.innerHTML = `<div class="empty-state">Пока пусто — отправьте заявку во вкладке «Заявки».</div>`; return; }
   list.innerHTML = outbox.map(o=>`<div class="outbox-item card glass"><span class="outbox-dot ${o.status}"></span>
     <div style="flex:1"><div class="outbox-title">${o.title}</div><div class="outbox-sub">${o.sub}</div></div>
     <span class="outbox-time">${o.status==='sent'?'Доставлено':'Ожидает бэкенд'} · ${o.time}</span></div>`).join('');
 }
 document.getElementById('clearOutbox').addEventListener('click', ()=>{
+  if(currentUser){ showToast('История заявок хранится в аккаунте и не удаляется отсюда'); return; }
   outbox = []; try{ localStorage.removeItem('devhub_outbox'); }catch(e){} renderOutbox(); showToast('История уведомлений очищена');
 });
 

@@ -1154,13 +1154,17 @@ function startBgEffect(type){
 /* ===================== REQUESTS -> OUTBOX + Supabase + Telegram ===================== */
 let reqType = 'add';
 function updateReqFieldsVisibility(){
+  const needsAppSelect = reqType === 'bug_report' || reqType === 'remove' || reqType === 'complaint';
   const isBug = reqType === 'bug_report';
-  document.getElementById('reqAppSelectWrap').style.display = isBug ? '' : 'none';
-  document.getElementById('reqNameWrap').style.display = isBug ? 'none' : '';
-  document.getElementById('reqLinkWrap').style.display = isBug ? 'none' : '';
+  const isAdd = reqType === 'add';
+  document.getElementById('reqAppSelectWrap').style.display = needsAppSelect ? '' : 'none';
+  document.getElementById('reqNameWrap').style.display = isAdd ? '' : 'none';
+  document.getElementById('reqLinkWrap').style.display = isAdd ? '' : 'none';
   document.getElementById('reqCommentWrap').style.display = isBug ? 'none' : '';
   document.getElementById('reqWhatWrongWrap').style.display = isBug ? '' : 'none';
   document.getElementById('reqExpectedWrap').style.display = isBug ? '' : 'none';
+  const commentLabel = document.querySelector('#reqCommentWrap label');
+  if(commentLabel) commentLabel.textContent = reqType==='remove' ? 'Почему приложение нужно удалить?' : (reqType==='complaint' ? 'В чём жалоба?' : 'Комментарий');
 }
 function fillReqAppSelect(){
   const sel = document.getElementById('reqAppSelect');
@@ -1173,7 +1177,7 @@ document.querySelectorAll('#reqType button').forEach(b=>{
     b.classList.add('on');
     reqType = b.dataset.type;
     updateReqFieldsVisibility();
-    if(reqType === 'bug_report') fillReqAppSelect();
+    if(reqType === 'bug_report' || reqType === 'remove' || reqType === 'complaint') fillReqAppSelect();
   });
 });
 updateReqFieldsVisibility();
@@ -1195,15 +1199,24 @@ document.getElementById('reqSubmit').addEventListener('click', async ()=>{
     const expected = document.getElementById('reqExpected').value.trim();
     if(!app){ showToast('Каталог ещё не загрузился — попробуйте через секунду'); return; }
     if(!whatWrong){ showToast('Опишите, что именно неправильно'); return; }
-    payload = {type:'bug_report', appId, name:app.name, whatWrong, expected, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.email:null, ts:Date.now()};
+    payload = {type:'bug_report', appId, name:app.name, whatWrong, expected, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.name:null, ts:Date.now()};
     summaryTitle = `${typeLabels.bug_report}: ${app.name}`;
     summarySub = whatWrong;
+  } else if(reqType === 'remove' || reqType === 'complaint'){
+    const appId = document.getElementById('reqAppSelect').value;
+    const app = androidApps.find(a=>a.id===appId);
+    const comment = document.getElementById('reqComment').value.trim();
+    if(!app){ showToast('Каталог ещё не загрузился — попробуйте через секунду'); return; }
+    if(!comment){ showToast(reqType==='remove' ? 'Укажите причину удаления' : 'Опишите жалобу'); return; }
+    payload = {type:reqType, appId, name:app.name, comment, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.name:null, ts:Date.now()};
+    summaryTitle = `${typeLabels[reqType]}: ${app.name}`;
+    summarySub = comment;
   } else {
     const name = document.getElementById('reqName').value.trim();
     const link = document.getElementById('reqLink').value.trim();
     const comment = document.getElementById('reqComment').value.trim();
     if(!name){ showToast('Укажите название приложения'); return; }
-    payload = {type:reqType, name, link, comment, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.email:null, ts:Date.now()};
+    payload = {type:reqType, name, link, comment, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.name:null, ts:Date.now()};
     summaryTitle = `${typeLabels[reqType]}: ${name}`;
     summarySub = comment||link||'Без комментария';
   }

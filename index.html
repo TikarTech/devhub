@@ -432,6 +432,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
           <div style="padding:14px 20px 20px; display:flex; gap:10px; align-items:center;">
             <button class="btn btn-primary" id="profileSave">Сохранить профиль</button>
             <span class="save-hint" style="font-size:11.5px; color:var(--faint);" id="profileSaveHint">Изменения видно в превью сразу</span>
+            <button class="btn btn-ghost btn-sm" id="signOutBtn" style="display:none; margin-left:auto;">Выйти из аккаунта</button>
           </div>
         </div>
 
@@ -587,7 +588,7 @@ async function loadCatalogFromSupabase(){
   if(!sbClient){ console.warn('sbClient не инициализирован — каталог не загружен'); return; }
   const { data, error } = await sbClient
     .from('apps')
-    .select('id, name, author, description, category, icon, rating, github_url, apk_url, status, app_versions(version, architectures, created_at)')
+    .select('id, name, author, description, category, icon, rating, github_url, apk_url, status, added_by, app_versions(version, architectures, created_at)')
     .eq('status', 'approved')
     .order('created_at', { ascending: true });
 
@@ -608,6 +609,7 @@ async function loadCatalogFromSupabase(){
       icon: row.icon || '📦',
       name: row.name,
       author: row.author || '—',
+      addedBy: row.added_by || null,
       rating: row.rating ?? 5,
       cat: row.category || 'other',
       desc: row.description || '',
@@ -686,7 +688,7 @@ function androidCardHTML(app){
       <div class="tool-icon">${app.icon}</div>
       <div class="android-meta">
         <div style="display:flex; align-items:center; gap:8px;"><div class="tool-name">${app.name}</div><div class="tool-rating">★ ${app.rating}</div></div>
-        <div class="tool-author">${app.author}</div>
+        <div class="tool-author">${app.addedBy ? `<a href="profile.html?id=${app.addedBy}" style="color:inherit; text-decoration:none; border-bottom:1px dashed var(--faint);">${app.author}</a>` : app.author}</div>
         <div class="tool-desc">${app.desc}</div>
       </div>
       <div class="android-selects">
@@ -817,10 +819,10 @@ document.querySelectorAll('#authTabs button').forEach(b=>{
 });
 
 /* Кнопка в топбаре/футере: если юзер не залогинен — открывает модалку входа,
-   если залогинен — по клику на аватар-чип спрашивает подтверждение выхода. */
+   если залогинен — переходит в свой профиль (там же теперь есть кнопка "Выйти"). */
 document.getElementById('openAuthBtn').addEventListener('click', ()=>{
   if(currentUser){
-    if(confirm(`Выйти из аккаунта ${currentUser.email}?`)) signOutUser();
+    showView('profile');
   } else {
     openModal('authBackdrop');
   }
@@ -828,7 +830,7 @@ document.getElementById('openAuthBtn').addEventListener('click', ()=>{
 document.getElementById('footAuth').addEventListener('click', e=>{
   e.preventDefault();
   if(currentUser){
-    if(confirm(`Выйти из аккаунта ${currentUser.email}?`)) signOutUser();
+    showView('profile');
   } else {
     openModal('authBackdrop');
   }
@@ -919,10 +921,14 @@ async function signOutUser(){
   await sbClient.auth.signOut();
   showToast('Вы вышли из аккаунта');
 }
+document.getElementById('signOutBtn').addEventListener('click', ()=>{
+  if(confirm(`Выйти из аккаунта ${currentUser?.email || ''}?`)) signOutUser();
+});
 
 function updateAuthUI(){
   const btn = document.getElementById('openAuthBtn');
   if(!btn) return;
+  const signOutBtn = document.getElementById('signOutBtn');
   if(currentUser){
     btn.className = 'avatar-chip';
     const avatarHtml = currentUser.avatarUrl
@@ -931,11 +937,13 @@ function updateAuthUI(){
     btn.innerHTML = `${avatarHtml}&nbsp;${currentUser.name}`;
     const hint = document.getElementById('scopeAccountHint');
     if(hint) hint.textContent = 'вход выполнен';
+    if(signOutBtn) signOutBtn.style.display = 'inline-flex';
   } else {
     btn.className = 'btn btn-ghost';
     btn.textContent = 'Войти';
     const hint = document.getElementById('scopeAccountHint');
     if(hint) hint.textContent = 'нужен вход';
+    if(signOutBtn) signOutBtn.style.display = 'none';
   }
 }
 

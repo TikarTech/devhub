@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="night">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Профиль — DevHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --radius-sm:10px; --radius-md:16px; --radius-lg:24px;
+  --shadow:0 1px 2px rgba(0,0,0,.25), 0 20px 40px -20px rgba(0,0,0,.55);
+  --dur:.3s;
+}
+html[data-theme="night"]{ --bg:#0A0B10; --bg2:#111319; --surface:#15171F; --surface2:#1B1E28; --border:#262A36; --text:#F2F3F9; --muted:#9498B2; --faint:#666B84; --primary:#8B7CFF; --primary-d:#7566F0; --primary-soft:#241F3D; --on-primary:#0A0B10; --star:#FFC65C; --a:#453BAA; --b:#8B7CFF; }
+html[data-theme="day"]{ --bg:#EDF0FA; --bg2:#F7F8FD; --surface:#FFFFFF; --surface2:#FBFBFF; --border:#E1E4F1; --text:#181B29; --muted:#666C85; --faint:#9498AC; --primary:#6D5DF6; --primary-d:#5747E4; --primary-soft:#ECE9FE; --on-primary:#fff; --star:#F5A623; --a:#6D5DF6; --b:#B18CFF; }
+html[data-theme="apple"]{ --bg:#0E1A11; --bg2:#132218; --surface:#16261B; --surface2:#1B2D20; --border:#243A2B; --text:#EAF7EE; --muted:#8FB59B; --faint:#5C7A66; --primary:#3FD873; --primary-d:#2FB55E; --primary-soft:#193A24; --on-primary:#06170B; --star:#EFA93B; --a:#3FD873; --b:#8CE6A8; }
+html[data-theme="warm"]{ --bg:#1C120A; --bg2:#241708; --surface:#28190C; --surface2:#301E0F; --border:#3C260F; --text:#FCE9D6; --muted:#C29868; --faint:#8A6A45; --primary:#F0762F; --primary-d:#D75F1C; --primary-soft:#3A2510; --on-primary:#1C120A; --star:#E8A33D; --a:#F0762F; --b:#FFC069; }
+html[data-theme="frost"]{ --bg:#081418; --bg2:#0C1B20; --surface:#0F2027; --surface2:#122731; --border:#1B3540; --text:#E4F6FA; --muted:#7FB6C4; --faint:#4C7C8B; --primary:#22C3EE; --primary-d:#0FA6CC; --primary-soft:#123640; --on-primary:#06181C; --star:#E7B23A; --a:#22C3EE; --b:#7FE0E0; }
+html[data-theme="violet"]{ --bg:#150A1F; --bg2:#1C0E29; --surface:#1F1030; --surface2:#26143A; --border:#33195080; --text:#F1E6FB; --muted:#B49BC6; --faint:#7A6490; --primary:#B25CF0; --primary-d:#9A46E0; --primary-soft:#2E1745; --on-primary:#150A1F; --star:#E6A93D; --a:#B25CF0; --b:#E38CE6; }
+html[data-theme="mono"]{ --bg:#0C0C0D; --bg2:#131314; --surface:#18181A; --surface2:#1E1E21; --border:#2A2A2E; --text:#F4F4F5; --muted:#A0A0A8; --faint:#65656C; --primary:#E5E5EA; --primary-d:#FFFFFF; --primary-soft:#232326; --on-primary:#0C0C0D; --star:#C8C8CE; --a:#8A8A92; --b:#E5E5EA; }
+html[data-theme="sakura"]{ --bg:#1E0E15; --bg2:#26121B; --surface:#2A1520; --surface2:#331827; --border:#3F1E30; --text:#FDEAF1; --muted:#D79BB1; --faint:#93576C; --primary:#F0699C; --primary-d:#E8558B; --primary-soft:#3A1B2C; --on-primary:#1E0E15; --star:#E8A33D; --a:#F0699C; --b:#FFB0C9; }
+html[data-theme="emerald"]{ --bg:#071912; --bg2:#0B2318; --surface:#0E2A1D; --surface2:#123424; --border:#1B4530; --text:#E3FAEE; --muted:#7FC7A5; --faint:#3F7C60; --primary:#16C381; --primary-d:#0C8F5B; --primary-soft:#123F2B; --on-primary:#04140D; --star:#E0A93B; --a:#16C381; --b:#57D9A6; }
+html[data-theme="russia"]{ --bg:#0A0E17; --bg2:#0E1420; --surface:#121A29; --surface2:#172033; --border:#22304A; --text:#F5F7FB; --muted:#9FB0CC; --faint:#5E6E8E; --primary:#2159C7; --primary-d:#173F94; --primary-soft:#1A2C4D; --on-primary:#FFFFFF; --star:#E7C23A; --a:#D52B3E; --b:#2159C7; }
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; min-height:100vh;}
+h1,h2,h3,.brand{font-family:'Manrope',sans-serif;}
+a{color:inherit; text-decoration:none;}
+button{font-family:inherit; cursor:pointer;}
+img{max-width:100%; display:block;}
+.wrap{max-width:760px; margin:0 auto; padding:0 20px;}
+
+.glass{
+  background:color-mix(in srgb, var(--surface) 58%, transparent);
+  backdrop-filter:blur(22px) saturate(160%); -webkit-backdrop-filter:blur(22px) saturate(160%);
+  border:1px solid color-mix(in srgb, var(--surface) 40%, white 18%);
+  box-shadow:inset 0 1px 0 color-mix(in srgb, white 12%, transparent), var(--shadow);
+}
+.card{border-radius:var(--radius-md);}
+
+.topbar{padding:16px 0;}
+.brand{display:flex; align-items:center; gap:9px; font-weight:800; font-size:17px; white-space:nowrap;}
+.brand .mark{width:30px; height:30px; border-radius:9px; flex:none; background:conic-gradient(from 210deg, var(--a), var(--b), var(--a)); position:relative;}
+.brand .mark::after{content:""; position:absolute; inset:7px; border-radius:5px; background:var(--surface);}
+
+.btn{font-weight:600; font-size:13.5px; border-radius:12px; padding:9px 15px; border:1px solid transparent; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
+.btn-primary{background:var(--primary); color:var(--on-primary);}
+.btn-ghost{background:var(--surface2); color:var(--text); border-color:var(--border);}
+.btn-sm{padding:6px 11px; font-size:12px; border-radius:9px;}
+
+.profile-hero{padding:32px 24px; text-align:center; margin-bottom:20px;}
+.profile-avatar{width:96px; height:96px; border-radius:50%; margin:0 auto 16px; overflow:hidden; background:var(--primary-soft); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:32px; color:var(--primary);}
+.profile-avatar img{width:100%; height:100%; object-fit:cover;}
+.profile-name{font-size:22px; font-weight:800;}
+.profile-handle{font-size:13px; color:var(--muted); margin-top:2px;}
+.profile-bio{font-size:14px; color:var(--muted); line-height:1.6; margin-top:12px; max-width:480px; margin-left:auto; margin-right:auto;}
+.profile-loc{font-size:12.5px; color:var(--faint); margin-top:8px;}
+.profile-links{display:flex; justify-content:center; gap:8px; margin-top:16px; flex-wrap:wrap;}
+.profile-links a{width:38px; height:38px; border-radius:50%; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:16px;}
+.profile-stats{display:flex; justify-content:center; gap:28px; margin-top:18px;}
+.profile-stat b{display:block; font-size:18px;}
+.profile-stat span{font-size:11.5px; color:var(--faint);}
+
+.section-title{font-size:15px; font-weight:700; margin:24px 0 12px;}
+.tool-icon{width:40px; height:40px; border-radius:12px; flex:none; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px;}
+.app-row{display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:var(--radius-md); margin-bottom:8px;}
+.app-meta{flex:1; min-width:0;}
+.app-name{font-weight:700; font-size:14px;}
+.app-desc{font-size:12.5px; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.app-rating{font-size:12px; font-weight:700; color:var(--star); white-space:nowrap;}
+
+.empty-state{padding:40px 20px; text-align:center; color:var(--faint); font-size:13.5px;}
+.loading-state{padding:60px 20px; text-align:center; color:var(--faint);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="brand" href="index.html">
+      <div class="mark"></div>
+      <span>DevHub</span>
+    </a>
+  </div>
+
+  <div id="content">
+    <div class="loading-state">Загружаем профиль…</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nnuauvwjeiewituexgsj.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'ВСТАВЬ-СЮДА-СВОЙ-sb_publishable_...';
+let sbClient = null;
+try{
+  if(window.supabase && typeof window.supabase.createClient === 'function'){
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  }
+}catch(e){ console.error('Ошибка инициализации Supabase:', e); }
+
+/* Подхватываем тему, если посетитель уже выбирал её на главном сайте */
+try{
+  const savedSettings = JSON.parse(localStorage.getItem('devhub_settings'));
+  if(savedSettings?.theme) document.documentElement.setAttribute('data-theme', savedSettings.theme);
+}catch(e){}
+
+const socialIcons = {twitter:'🐦', telegram:'✈️', discord:'🎮', tiktok:'🎵', github:'💻', site:'🔗', youtube:'▶️', soundcloud:'☁️'};
+
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function renderNotFound(){
+  document.getElementById('content').innerHTML = `
+    <div class="empty-state card glass" style="margin-top:40px; padding:60px 20px;">
+      <div style="font-size:32px; margin-bottom:10px;">🙈</div>
+      <div style="font-weight:700; font-size:15px; margin-bottom:6px; color:var(--text);">Профиль не найден</div>
+      <div>Возможно, ссылка устарела или пользователь ещё не заполнил профиль.</div>
+      <a class="btn btn-ghost btn-sm" href="index.html" style="margin-top:16px; display:inline-flex;">← Вернуться на DevHub</a>
+    </div>`;
+}
+
+function appRowHTML(app){
+  return `<div class="app-row card glass">
+    <div class="tool-icon">${app.icon || '📦'}</div>
+    <div class="app-meta">
+      <div class="app-name">${escapeHtml(app.name)}</div>
+      <div class="app-desc">${escapeHtml(app.description || '')}</div>
+    </div>
+    <div class="app-rating">★ ${app.rating ?? 5}</div>
+  </div>`;
+}
+
+async function renderProfile(userId){
+  if(!sbClient){
+    document.getElementById('content').innerHTML = '<div class="loading-state">Сервис недоступен, попробуйте позже.</div>';
+    return;
+  }
+
+  const { data: profile, error: profileError } = await sbClient
+    .from('public_profiles')
+    .select('id, display_name, handle, bio, location, avatar_url, links, stat_downloads, stat_suggestions')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if(profileError || !profile || !profile.display_name){
+    renderNotFound();
+    return;
+  }
+
+  const { data: apps } = await sbClient
+    .from('apps')
+    .select('id, name, description, icon, rating')
+    .eq('added_by', userId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false });
+
+  const avatarHtml = profile.avatar_url
+    ? `<img src="${profile.avatar_url}" alt="">`
+    : (profile.display_name || '?')[0].toUpperCase();
+
+  const linksHtml = (profile.links || []).filter(l=>l.url).map(l=>
+    `<a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" title="${escapeHtml(l.type)}">${socialIcons[l.type]||'🔗'}</a>`
+  ).join('');
+
+  const appsHtml = (apps && apps.length)
+    ? apps.map(appRowHTML).join('')
+    : '<div class="empty-state">Пока нет опубликованных приложений</div>';
+
+  document.getElementById('content').innerHTML = `
+    <div class="profile-hero card glass">
+      <div class="profile-avatar">${avatarHtml}</div>
+      <div class="profile-name">${escapeHtml(profile.display_name)}</div>
+      ${profile.handle ? `<div class="profile-handle">@${escapeHtml(profile.handle)}</div>` : ''}
+      ${profile.bio ? `<div class="profile-bio">${escapeHtml(profile.bio)}</div>` : ''}
+      ${profile.location ? `<div class="profile-loc">📍 ${escapeHtml(profile.location)}</div>` : ''}
+      ${linksHtml ? `<div class="profile-links">${linksHtml}</div>` : ''}
+      <div class="profile-stats">
+        <div class="profile-stat"><b>${profile.stat_downloads || 0}</b><span>скачиваний</span></div>
+        <div class="profile-stat"><b>${profile.stat_suggestions || 0}</b><span>предложений</span></div>
+        <div class="profile-stat"><b>${apps ? apps.length : 0}</b><span>приложений</span></div>
+      </div>
+    </div>
+    <div class="section-title">Приложения на DevHub</div>
+    ${appsHtml}
+  `;
+}
+
+const params = new URLSearchParams(window.location.search);
+const userId = params.get('id');
+if(userId){
+  renderProfile(userId);
+} else {
+  renderNotFound();
+}
+</script>
+</body>
+</html>

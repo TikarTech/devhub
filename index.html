@@ -72,6 +72,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .btn-ghost:hover{border-color:var(--primary);}
 .btn-sm{padding:6px 11px; font-size:12px; border-radius:9px;}
 .avatar-chip{display:flex; align-items:center; gap:7px; background:var(--surface2); border:1px solid var(--border); border-radius:999px; padding:5px 12px 5px 5px; font-size:13px; font-weight:600;}
+.role-badge{display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; margin-left:6px; vertical-align:middle; letter-spacing:.2px;}
+.role-badge.role-owner, .role-badge.role-howner{background:linear-gradient(120deg,var(--a),var(--b)); color:#fff;}
+.role-badge.role-moder, .role-badge.role-gmoder{background:var(--primary-soft); color:var(--primary);}
+.role-badge.role-helper, .role-badge.role-app{background:var(--surface2); color:var(--muted); border:1px solid var(--border);}
 .avatar-chip img{width:24px; height:24px; border-radius:50%; object-fit:cover;}
 
 /* ---- views ---- */
@@ -448,6 +452,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
           <div class="preview-card glass" id="previewCard">
             <div class="preview-avatar circle" id="previewAvatar"><span id="previewAvatarLetter">A</span></div>
             <div class="preview-name" id="previewName">Ваше имя</div>
+            <span class="role-badge" id="previewRoleBadge" style="display:none;"></span>
             <div class="preview-handle" id="previewHandle">@username</div>
             <div class="preview-bio" id="previewBio">Пара строк о себе появится здесь.</div>
             <div class="preview-loc" id="previewLoc">📍 —</div>
@@ -664,7 +669,7 @@ const themes = [
 let state = {
   theme:'night', lang:'ru', tz:'Europe/Moscow',
   profile:{name:'', handle:'', bio:'', loc:'', avatar:null, opacity:58, blur:22, radius:26, avatarShape:'circle', ring:false,
-    bg:'none', bgCustom:null, bgType:null, dim:72, bgFx:'none', track:'none', trackCustom:null, trackName:null, autoplay:false, volume:44,
+    bg:'none', bgCustom:null, bgType:null, dim:72, bgFx:'none', track:'none', trackCustom:null, trackName:null, autoplay:false, volume:44, role:'user',
     nameFx:'none', tilt:false, crown:false, links:[], statDownloads:0, statSuggestions:0},
 };
 let currentUser = null;
@@ -943,7 +948,9 @@ function updateAuthUI(){
     const avatarHtml = currentUser.avatarUrl
       ? `<img src="${currentUser.avatarUrl}" alt="">`
       : `<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--primary-soft);align-items:center;justify-content:center;font-size:12px;">${currentUser.name[0].toUpperCase()}</span>`;
-    btn.innerHTML = `${avatarHtml}&nbsp;<span class="chip-name">${currentUser.name}</span>`;
+    const roleLabel = ROLE_LABELS[state.profile.role];
+    const badgeHtml = roleLabel ? ` <span class="role-badge role-${state.profile.role} chip-name">${roleLabel}</span>` : '';
+    btn.innerHTML = `${avatarHtml}&nbsp;<span class="chip-name">${currentUser.name}</span>${badgeHtml}`;
     const hint = document.getElementById('scopeAccountHint');
     if(hint) hint.textContent = 'вход выполнен';
     if(signOutBtn) signOutBtn.style.display = 'inline-flex';
@@ -1010,6 +1017,7 @@ async function loadProfileFromSupabase(userId){
     bio: data.bio || state.profile.bio,
     loc: data.location || state.profile.loc,
     avatar: data.avatar_url || null,
+    role: data.role || 'user',
     bg: data.bg_url ? 'custom' : state.profile.bg,
     bgCustom: data.bg_url || null,
     bgType: data.bg_type || null,
@@ -1158,6 +1166,16 @@ document.getElementById('bgUpload').addEventListener('change', async e=>{
 
 function escapeHtml(str){
   return String(str==null?'':str).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+const ROLE_LABELS = { user:null, helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
+function renderRoleBadge(el, role){
+  if(!el) return;
+  const label = ROLE_LABELS[role];
+  if(!label){ el.style.display = 'none'; return; }
+  el.textContent = label;
+  el.className = 'role-badge role-' + role;
+  el.style.display = 'inline-block';
 }
 
 function renderMusicGrid(){
@@ -1316,6 +1334,7 @@ function updatePreviewLook(){
 }
 function updatePreview(){
   document.getElementById('previewName').textContent = state.profile.name || 'Ваше имя';
+  renderRoleBadge(document.getElementById('previewRoleBadge'), state.profile.role);
   document.getElementById('previewHandle').textContent = state.profile.handle ? '@'+state.profile.handle.replace('@','') : '@username';
   document.getElementById('previewBio').textContent = state.profile.bio || 'Пара строк о себе появится здесь.';
   document.getElementById('previewLoc').textContent = '📍 ' + (state.profile.loc || '—');

@@ -147,6 +147,8 @@ section{padding:44px 0;}
 .outbox-item{display:flex; gap:12px; align-items:flex-start; padding:14px; border-radius:14px; margin-bottom:10px;}
 .outbox-dot{width:9px; height:9px; border-radius:50%; margin-top:6px; flex:none; background:var(--faint);}
 .outbox-dot.sent{background:#3BD481;} .outbox-dot.pending{background:var(--star);} .outbox-dot.rejected{background:#E5484D;}
+.outbox-dot.approved{background:#3BD481;}
+.verdict-reason{font-size:12px; color:var(--muted); margin-top:4px;}
 .outbox-title{font-weight:700; font-size:13.5px;} .outbox-sub{font-size:12px; color:var(--muted); margin-top:2px;}
 .outbox-time{margin-left:auto; font-size:11px; color:var(--faint); white-space:nowrap;}
 .empty-state{text-align:center; padding:50px 20px; color:var(--faint);}
@@ -248,6 +250,16 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
   .top-right{ gap:6px; }
   .avatar-chip .chip-name{ display:none; }
 }
+
+.user-search{padding:16px; margin-bottom:18px;}
+.user-search input{width:100%; padding:10px 12px; border-radius:11px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:13.5px; font-family:inherit; outline:none;}
+.user-search input:focus{border-color:var(--primary);}
+.user-result{display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:11px; margin-top:6px; background:var(--surface2); border:1px solid var(--border); cursor:pointer; color:var(--text);}
+.user-result:hover{border-color:var(--primary);}
+.user-result img, .user-result .ur-ph{width:34px; height:34px; border-radius:50%; object-fit:cover; flex:none; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px;}
+.user-result .ur-name{font-weight:700; font-size:13.5px;}
+.user-result .ur-handle{font-size:12px; color:var(--muted);}
+.user-search-hint{font-size:12px; color:var(--faint); margin-top:8px;}
 </style>
 </head>
 <body>
@@ -324,6 +336,11 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
   <section style="padding-top:36px">
     <div class="wrap">
       <div class="section-head"><div><h2>Профиль</h2><p>Настройте страницу так же гибко, как в Klux Bio Link — с живым превью справа</p></div></div>
+      <div class="user-search glass card">
+        <div style="font-weight:700; font-size:14px; margin-bottom:8px;">🔎 Найти профиль пользователя</div>
+        <input id="userSearchInput" placeholder="Введите имя или @handle…" autocomplete="off">
+        <div id="userSearchResults"></div>
+      </div>
       <div class="profile-layout">
         <div class="editor-card glass">
           <div class="editor-tabs" id="editorTabs">
@@ -508,6 +525,9 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
 <div class="view" id="view-notifications">
   <section style="padding-top:36px">
     <div class="wrap">
+      <div class="section-head"><div><h2>Вердикты по заявкам</h2><p>Статус ваших заявок после проверки модератором</p></div></div>
+      <div id="verdictsList" style="max-width:700px; margin:0 auto 32px;"></div>
+
       <div class="section-head"><div><h2>Уведомления</h2><p>Всё, что было отправлено из этого браузера</p></div>
         <button class="btn btn-ghost btn-sm" id="clearOutbox">Очистить</button></div>
       <div id="outboxList" style="max-width:700px; margin:0 auto;"></div>
@@ -688,7 +708,7 @@ function showView(name){
   document.getElementById('view-'+name).classList.add('visible');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
   window.scrollTo({top:0, behavior:'smooth'});
-  if(name==='notifications') renderOutbox();
+  if(name==='notifications'){ renderOutbox(); loadMyVerdicts(); }
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>showView(t.dataset.view)));
 document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click', e=>{e.preventDefault(); showView(el.dataset.goto);}));
@@ -781,7 +801,7 @@ function applyBackground(id, customUrl, customType){
       layer.appendChild(v);
     }
   }
-  document.getElementById('bgDim').style.opacity = (state.profile.dim||72)/100;
+  document.getElementById('bgDim').style.opacity = (state.profile.dim ?? 72)/100;
 }
 function applyTheme(id){
   document.documentElement.setAttribute('data-theme', id);
@@ -1073,6 +1093,25 @@ async function saveProfileToSupabase(){
 
 /* Перерисовывает весь UI редактора профиля из текущего state.profile —
    вызывается и при первой загрузке страницы, и после подгрузки профиля из облака */
+/* Выставляет ползунки, переключатели и выбранные кнопки в соответствии с сохранённым профилем.
+   Без этого после перезагрузки страницы контролы показывают дефолт, хотя реальные значения сохранены. */
+function syncAppearanceControls(){
+  const p = state.profile;
+  const setRange = (id, valId, v, suffix)=>{ const el=document.getElementById(id); if(el){ el.value=v; } const l=document.getElementById(valId); if(l) l.textContent=v+suffix; };
+  setRange('rDim','rDimVal', p.dim ?? 72, '%');
+  setRange('rOpacity','rOpacityVal', p.opacity ?? 58, '%');
+  setRange('rBlur','rBlurVal', p.blur ?? 22, 'px');
+  setRange('rRadius','rRadiusVal', p.radius ?? 26, 'px');
+  setRange('rVolume','rVolumeVal', p.volume ?? 44, '%');
+  const mv = document.getElementById('miniVolume'); if(mv) mv.value = p.volume ?? 44;
+  const setCheck = (id,v)=>{ const el=document.getElementById(id); if(el) el.checked = !!v; };
+  setCheck('tAutoplay', p.autoplay); setCheck('tRing', p.ring); setCheck('tTilt', p.tilt); setCheck('tCrown', p.crown);
+  document.querySelectorAll('#avatarShape button').forEach(b=>b.classList.toggle('on', b.dataset.shape===p.avatarShape));
+  document.querySelectorAll('#effectGrid .effect-opt').forEach(x=>x.classList.toggle('selected', x.dataset.fx===(p.bgFx||'none')));
+  document.querySelectorAll('#nameEffectGrid .effect-opt').forEach(x=>x.classList.toggle('selected', x.dataset.nfx===(p.nameFx||'none')));
+  document.getElementById('bgDim').style.opacity = (p.dim ?? 72)/100;
+  if(typeof updatePreviewLook === 'function') updatePreviewLook();
+}
 function refreshProfileEditorUI(){
   renderBgGrid();
   renderMusicGrid();
@@ -1080,16 +1119,25 @@ function refreshProfileEditorUI(){
   applyBackground(state.profile.bg==='custom' ? null : state.profile.bg, state.profile.bgCustom, state.profile.bgType);
   if(state.profile.track==='custom' && state.profile.trackCustom){
     const audioEl = document.getElementById('audioEl');
-    audioEl.src = state.profile.trackCustom;
-    audioEl.volume = (state.profile.volume||44)/100;
+    audioEl.volume = (state.profile.volume ?? 44)/100;
+    if(audioEl.src !== state.profile.trackCustom){
+      audioEl.src = state.profile.trackCustom;
+      audioEl.addEventListener('loadedmetadata', restoreAudioPosition, {once:true});
+    }
     document.getElementById('nowPlaying').textContent = state.profile.trackName || 'Свой трек';
     setActiveMusicOption('custom');
-    if(state.profile.autoplay) audioEl.play().catch(()=>{});
+    if(state.profile.autoplay){
+      audioEl.play().then(()=>{ const b=document.getElementById('playBtn'); if(b) b.textContent='❚❚'; }).catch(()=>{});
+    }
   } else if(state.profile.track && state.profile.track!=='custom'){
-    playTrack(state.profile.track);
+    const _opt = musicOptions.find(m=>m.id===state.profile.track);
+    const _audio = document.getElementById('audioEl');
+    const alreadyLoaded = _opt && _opt.file && _audio.src && _audio.src.endsWith(_opt.file);
+    if(!alreadyLoaded) playTrack(state.profile.track);
     setActiveMusicOption(state.profile.track);
   }
   startBgEffect(state.profile.bgFx || 'none');
+  syncAppearanceControls();
   updatePreview();
   document.getElementById('pName').value = state.profile.name || '';
   document.getElementById('pHandle').value = state.profile.handle || '';
@@ -1107,22 +1155,57 @@ function refreshProfileEditorUI(){
   }
 }
 
-/* Восстанавливаем сессию при загрузке страницы (Supabase сам хранит токен) */
+/* Применяем сессию один раз на пользователя. Supabase шлёт события входа/обновления токена
+   и при возврате на вкладку — если каждый раз перезагружать профиль и перерисовывать плеер,
+   трек начинается заново, а несохранённые значения сбрасываются. */
+let loadedProfileForUserId = null;
+async function applySession(session){
+  const uid = session?.user?.id || null;
+  if(uid && uid === loadedProfileForUserId) return; // та же сессия — ничего не трогаем
+  loadedProfileForUserId = uid;
+  currentUser = mapSupabaseUser(session?.user);
+  if(currentUser){
+    await loadProfileFromSupabase(currentUser.id);
+    currentUser.avatarUrl = state.profile.avatar || null;
+    if(state.profile.name) currentUser.name = state.profile.name;
+  }
+  updateAuthUI();
+  refreshProfileEditorUI();
+}
 if(sbClient){
-  sbClient.auth.getSession().then(async ({ data: { session } })=>{
-    currentUser = mapSupabaseUser(session?.user);
-    if(currentUser){ await loadProfileFromSupabase(currentUser.id); currentUser.avatarUrl = state.profile.avatar || null; if(state.profile.name) currentUser.name = state.profile.name; }
-    updateAuthUI();
-    refreshProfileEditorUI();
-  });
+  sbClient.auth.getSession().then(({ data: { session } })=>applySession(session));
+  sbClient.auth.onAuthStateChange((_event, session)=>{ applySession(session); });
+}
 
-  /* Реагируем на вход/выход/обновление токена в реальном времени */
-  sbClient.auth.onAuthStateChange(async (_event, session)=>{
-    currentUser = mapSupabaseUser(session?.user);
-    if(currentUser){ await loadProfileFromSupabase(currentUser.id); currentUser.avatarUrl = state.profile.avatar || null; if(state.profile.name) currentUser.name = state.profile.name; }
-    updateAuthUI();
-    refreshProfileEditorUI();
-  });
+
+/* ===================== ПОИСК ПОЛЬЗОВАТЕЛЕЙ ===================== */
+let userSearchTimer = null;
+document.getElementById('userSearchInput').addEventListener('input', e=>{
+  clearTimeout(userSearchTimer);
+  const q = e.target.value.trim();
+  const box = document.getElementById('userSearchResults');
+  if(q.length < 2){ box.innerHTML = q ? '<div class="user-search-hint">Введите минимум 2 символа</div>' : ''; return; }
+  userSearchTimer = setTimeout(()=>searchUsers(q), 300);
+});
+async function searchUsers(rawQuery){
+  const box = document.getElementById('userSearchResults');
+  if(!sbClient){ box.innerHTML = '<div class="user-search-hint">Сервис недоступен</div>'; return; }
+  const q = rawQuery.replace(/^@/, '').replace(/[%,()*\\]/g, ' ').trim();
+  if(!q){ box.innerHTML = ''; return; }
+  const { data, error } = await sbClient
+    .from('public_profiles')
+    .select('id, display_name, handle, avatar_url, role')
+    .or(`display_name.ilike.%${q}%,handle.ilike.%${q}%`)
+    .limit(10);
+  if(error){ console.error('searchUsers failed:', error.message); box.innerHTML = '<div class="user-search-hint">Не удалось выполнить поиск</div>'; return; }
+  if(!data || !data.length){ box.innerHTML = '<div class="user-search-hint">Никого не нашли</div>'; return; }
+  box.innerHTML = data.map(u=>{
+    const name = escapeHtmlClient(u.display_name || 'Без имени');
+    const av = u.avatar_url ? `<img src="${u.avatar_url}" alt="">` : `<span class="ur-ph">${name[0].toUpperCase()}</span>`;
+    const roleLabel = ROLE_LABELS[u.role];
+    const badge = roleLabel ? `<span class="role-badge role-${u.role}">${roleLabel}</span>` : '';
+    return `<a class="user-result" href="profile.html?id=${u.id}">${av}<div style="flex:1; min-width:0;"><div class="ur-name">${name}${badge}</div>${u.handle ? `<div class="ur-handle">@${escapeHtmlClient(u.handle)}</div>` : ''}</div></a>`;
+  }).join('');
 }
 
 /* ===================== PROFILE EDITOR ===================== */
@@ -1189,7 +1272,7 @@ function renderMusicGrid(){
       const audioEl = document.getElementById('audioEl');
       state.profile.track = 'custom';
       audioEl.src = state.profile.trackCustom;
-      audioEl.volume = (state.profile.volume||44)/100;
+      audioEl.volume = (state.profile.volume ?? 44)/100;
       document.getElementById('nowPlaying').textContent = state.profile.trackName || 'Мой трек';
       audioEl.play().catch(()=>{});
       setActiveMusicOption('custom');
@@ -1215,10 +1298,49 @@ function playTrack(id, autoStart){
   const audioEl = document.getElementById('audioEl');
   const opt = musicOptions.find(m=>m.id===id);
   state.profile.track = id; state.profile.trackCustom = null;
-  if(!opt || !opt.file){ audioEl.pause(); audioEl.src=''; document.getElementById('nowPlaying').textContent = 'Ничего не выбрано'; return; }
-  audioEl.src = opt.file; audioEl.volume = (state.profile.volume||44)/100;
+  const playBtn = document.getElementById('playBtn');
+  if(!opt || !opt.file){ audioEl.pause(); audioEl.src=''; document.getElementById('nowPlaying').textContent = 'Ничего не выбрано'; if(playBtn) playBtn.textContent='▶'; return; }
+  audioEl.src = opt.file; audioEl.volume = (state.profile.volume ?? 44)/100;
+  audioEl.addEventListener('loadedmetadata', restoreAudioPosition, {once:true});
   document.getElementById('nowPlaying').textContent = opt.name;
-  if(autoStart || state.profile.autoplay) audioEl.play().catch(()=>{});
+  if(autoStart || state.profile.autoplay){
+    audioEl.play().then(()=>{ if(playBtn) playBtn.textContent='❚❚'; }).catch(()=>{ if(playBtn) playBtn.textContent='▶'; });
+  } else if(playBtn){
+    playBtn.textContent = '▶';
+  }
+}
+/* Браузеры блокируют автозапуск звука без предварительного взаимодействия
+   пользователя со страницей — ловим первое действие (клик/тап/клавишу)
+   и пробуем запустить трек именно в этот момент, тогда браузер это разрешает. */
+let audioAutoplayUnlocked = false;
+function unlockAudioAutoplayOnce(){
+  if(audioAutoplayUnlocked) return;
+  audioAutoplayUnlocked = true;
+  const audioEl = document.getElementById('audioEl');
+  if(state.profile.autoplay && audioEl.src && audioEl.paused){
+    audioEl.play().then(()=>{ const b=document.getElementById('playBtn'); if(b) b.textContent='❚❚'; }).catch(()=>{});
+  }
+}
+['click','touchstart','keydown'].forEach(evt=>document.addEventListener(evt, unlockAudioAutoplayOnce, {once:true, passive:true}));
+/* Позиция воспроизведения — сохраняем в localStorage раз в несколько секунд,
+   чтобы при возврате на вкладку/перезагрузке трек продолжался, а не начинался с нуля. */
+let lastAudioPosSave = 0;
+document.getElementById('audioEl').addEventListener('timeupdate', ()=>{
+  const now = Date.now();
+  if(now - lastAudioPosSave < 4000) return;
+  lastAudioPosSave = now;
+  const audioEl = document.getElementById('audioEl');
+  if(!audioEl.src) return;
+  try{ localStorage.setItem('devhub_audio_pos', JSON.stringify({src: audioEl.src, time: audioEl.currentTime})); }catch(e){}
+});
+function restoreAudioPosition(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('devhub_audio_pos'));
+    const audioEl = document.getElementById('audioEl');
+    if(saved && saved.src && audioEl.src && saved.src === audioEl.src){
+      audioEl.currentTime = saved.time || 0;
+    }
+  }catch(e){}
 }
 document.getElementById('musicUploadBtn').addEventListener('click', ()=>document.getElementById('musicUpload').click());
 document.getElementById('musicUpload').addEventListener('change', async e=>{
@@ -1253,30 +1375,31 @@ document.getElementById('playBtn').addEventListener('click', ()=>{
     state.profile.volume = +v;
     document.getElementById('rVolumeVal').textContent = v+'%';
     document.getElementById('rVolume').value = v; document.getElementById('miniVolume').value = v;
+    schedulePersistProfile();
   });
 });
-document.getElementById('tAutoplay').addEventListener('change', e=>{ state.profile.autoplay = e.target.checked; });
+document.getElementById('tAutoplay').addEventListener('change', e=>{ state.profile.autoplay = e.target.checked; schedulePersistProfile(); });
 
 document.querySelectorAll('#effectGrid .effect-opt').forEach(el=>el.addEventListener('click', ()=>{
   document.querySelectorAll('#effectGrid .effect-opt').forEach(x=>x.classList.remove('selected')); el.classList.add('selected');
-  state.profile.bgFx = el.dataset.fx; startBgEffect(el.dataset.fx);
+  state.profile.bgFx = el.dataset.fx; startBgEffect(el.dataset.fx); schedulePersistProfile();
 }));
 document.querySelectorAll('#nameEffectGrid .effect-opt').forEach(el=>el.addEventListener('click', ()=>{
   document.querySelectorAll('#nameEffectGrid .effect-opt').forEach(x=>x.classList.remove('selected')); el.classList.add('selected');
-  state.profile.nameFx = el.dataset.nfx; updatePreview();
+  state.profile.nameFx = el.dataset.nfx; updatePreview(); schedulePersistProfile();
 }));
 
-document.getElementById('rDim').addEventListener('input', e=>{ state.profile.dim=+e.target.value; document.getElementById('rDimVal').textContent=e.target.value+'%'; document.getElementById('bgDim').style.opacity = e.target.value/100; });
-document.getElementById('rOpacity').addEventListener('input', e=>{ state.profile.opacity=+e.target.value; document.getElementById('rOpacityVal').textContent=e.target.value+'%'; updatePreviewLook(); });
-document.getElementById('rBlur').addEventListener('input', e=>{ state.profile.blur=+e.target.value; document.getElementById('rBlurVal').textContent=e.target.value+'px'; updatePreviewLook(); });
-document.getElementById('rRadius').addEventListener('input', e=>{ state.profile.radius=+e.target.value; document.getElementById('rRadiusVal').textContent=e.target.value+'px'; updatePreviewLook(); });
+document.getElementById('rDim').addEventListener('input', e=>{ state.profile.dim=+e.target.value; document.getElementById('rDimVal').textContent=e.target.value+'%'; document.getElementById('bgDim').style.opacity = e.target.value/100; schedulePersistProfile(); });
+document.getElementById('rOpacity').addEventListener('input', e=>{ state.profile.opacity=+e.target.value; document.getElementById('rOpacityVal').textContent=e.target.value+'%'; updatePreviewLook(); schedulePersistProfile(); });
+document.getElementById('rBlur').addEventListener('input', e=>{ state.profile.blur=+e.target.value; document.getElementById('rBlurVal').textContent=e.target.value+'px'; updatePreviewLook(); schedulePersistProfile(); });
+document.getElementById('rRadius').addEventListener('input', e=>{ state.profile.radius=+e.target.value; document.getElementById('rRadiusVal').textContent=e.target.value+'px'; updatePreviewLook(); schedulePersistProfile(); });
 document.querySelectorAll('#avatarShape button').forEach(b=>b.addEventListener('click', ()=>{
   document.querySelectorAll('#avatarShape button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
-  state.profile.avatarShape = b.dataset.shape; updatePreview();
+  state.profile.avatarShape = b.dataset.shape; updatePreview(); schedulePersistProfile();
 }));
-document.getElementById('tRing').addEventListener('change', e=>{ state.profile.ring = e.target.checked; updatePreview(); });
-document.getElementById('tTilt').addEventListener('change', e=>{ state.profile.tilt = e.target.checked; });
-document.getElementById('tCrown').addEventListener('change', e=>{ state.profile.crown = e.target.checked; updatePreview(); });
+document.getElementById('tRing').addEventListener('change', e=>{ state.profile.ring = e.target.checked; updatePreview(); schedulePersistProfile(); });
+document.getElementById('tTilt').addEventListener('change', e=>{ state.profile.tilt = e.target.checked; schedulePersistProfile(); });
+document.getElementById('tCrown').addEventListener('change', e=>{ state.profile.crown = e.target.checked; updatePreview(); schedulePersistProfile(); });
 
 document.getElementById('avatarBtn').addEventListener('click', ()=>document.getElementById('avatarInput').click());
 document.getElementById('avatarInput').addEventListener('change', async e=>{
@@ -1303,7 +1426,7 @@ document.getElementById('avatarInput').addEventListener('change', async e=>{
 ['pName','pHandle','pBio','pLoc'].forEach(id=>{
   document.getElementById(id).addEventListener('input', e=>{
     const key = {pName:'name',pHandle:'handle',pBio:'bio',pLoc:'loc'}[id];
-    state.profile[key] = e.target.value; updatePreview();
+    state.profile[key] = e.target.value; updatePreview(); schedulePersistProfile();
   });
 });
 document.getElementById('statDownloads').addEventListener('input', e=>{ state.profile.statDownloads = +e.target.value; updatePreview(); });
@@ -1317,13 +1440,13 @@ function renderLinksList(){
       <input data-i="${i}" class="linkUrl" value="${l.url||''}" placeholder="https://…">
       <button class="btn btn-ghost btn-sm linkDel" data-i="${i}">✕</button>
     </div>`).join('');
-  document.querySelectorAll('.linkType').forEach(s=>s.addEventListener('change', e=>{ state.profile.links[+e.target.dataset.i].type = e.target.value; updatePreview(); }));
-  document.querySelectorAll('.linkUrl').forEach(s=>s.addEventListener('input', e=>{ state.profile.links[+e.target.dataset.i].url = e.target.value; updatePreview(); }));
-  document.querySelectorAll('.linkDel').forEach(s=>s.addEventListener('click', e=>{ state.profile.links.splice(+e.target.dataset.i,1); renderLinksList(); updatePreview(); }));
+  document.querySelectorAll('.linkType').forEach(s=>s.addEventListener('change', e=>{ state.profile.links[+e.target.dataset.i].type = e.target.value; updatePreview(); schedulePersistProfile(); }));
+  document.querySelectorAll('.linkUrl').forEach(s=>s.addEventListener('input', e=>{ state.profile.links[+e.target.dataset.i].url = e.target.value; updatePreview(); schedulePersistProfile(); }));
+  document.querySelectorAll('.linkDel').forEach(s=>s.addEventListener('click', e=>{ state.profile.links.splice(+e.target.dataset.i,1); renderLinksList(); updatePreview(); schedulePersistProfile(); }));
 }
 document.getElementById('addLinkBtn').addEventListener('click', ()=>{
   if(state.profile.links.length>=6){ showToast('Максимум 6 ссылок'); return; }
-  state.profile.links.push({type:'site', url:''}); renderLinksList(); updatePreview();
+  state.profile.links.push({type:'site', url:''}); renderLinksList(); updatePreview(); schedulePersistProfile();
 });
 
 function updatePreviewLook(){
@@ -1370,6 +1493,14 @@ function persistProfile(){
   if(currentUser && sbClient){
     saveProfileToSupabase().catch(err=>console.error('Фоновое сохранение профиля не удалось:', err.message));
   }
+}
+/* Слайдеры/переключатели дёргаются часто (drag), поэтому реальное сохранение
+   откладываем на 800мс после последнего изменения — иначе улетит десяток
+   запросов подряд при одном перетаскивании ползунка. */
+let persistProfileTimer = null;
+function schedulePersistProfile(){
+  clearTimeout(persistProfileTimer);
+  persistProfileTimer = setTimeout(()=>persistProfile(), 800);
 }
 document.getElementById('profileSave').addEventListener('click', async ()=>{
   saveProfileLocal();
@@ -1510,7 +1641,52 @@ document.getElementById('reqSubmit').addEventListener('click', async ()=>{
   showToast(result.ok ? 'Заявка отправлена' : 'Не удалось отправить — заявка сохранена локально');
   ['reqName','reqLink','reqGithub','reqComment','reqContact','reqWhatWrong','reqExpected'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   renderOutbox();
+  loadMyVerdicts();
 });
+
+const VERDICT_TYPE_LABELS = {
+  add: 'Добавить приложение', remove: 'Удалить приложение',
+  bug_report: 'Ошибка в информации', complaint: 'Жалоба'
+};
+async function loadMyVerdicts(){
+  const list = document.getElementById('verdictsList');
+  if(!list) return;
+  if(!currentUser || !sbClient){
+    list.innerHTML = `<div class="empty-state">Войдите в аккаунт, чтобы видеть статус своих заявок</div>`;
+    return;
+  }
+  const { data, error } = await sbClient
+    .from('requests')
+    .select('id, type, app_name, status, resolved_reason, created_at')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if(error){ console.error('loadMyVerdicts failed:', error.message); list.innerHTML = `<div class="empty-state">Не удалось загрузить статус заявок</div>`; return; }
+  if(!data || !data.length){ list.innerHTML = `<div class="empty-state">Вы ещё не отправляли заявок</div>`; return; }
+
+  const statusMeta = {
+    pending: {dot:'pending', label:'⏳ На рассмотрении'},
+    approved: {dot:'approved', label:'✅ Одобрено'},
+    rejected: {dot:'rejected', label:'❌ Отклонено'},
+    resubmitted: {dot:'pending', label:'🔁 Отправлено повторно'},
+  };
+  list.innerHTML = data.map(r=>{
+    const meta = statusMeta[r.status] || {dot:'pending', label:r.status};
+    const title = `${VERDICT_TYPE_LABELS[r.type]||'Заявка'}${r.app_name ? ': '+escapeHtmlClient(r.app_name) : ''}`;
+    const time = new Date(r.created_at).toLocaleString('ru-RU');
+    return `<div class="outbox-item card glass"><span class="outbox-dot ${meta.dot}"></span>
+      <div style="flex:1">
+        <div class="outbox-title">${title}</div>
+        <div class="outbox-sub">${meta.label}</div>
+        ${r.status==='rejected' && r.resolved_reason ? `<div class="verdict-reason">Причина: ${escapeHtmlClient(r.resolved_reason)}</div>` : ''}
+      </div>
+      <span class="outbox-time">${time}</span></div>`;
+  }).join('');
+}
+function escapeHtmlClient(str){
+  return String(str||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
 async function renderOutbox(){
   const list = document.getElementById('outboxList');
   if(currentUser && sbClient){

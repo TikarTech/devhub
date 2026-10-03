@@ -272,6 +272,35 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
   .avatar-chip .chip-name{ display:none; }
 }
 
+/* ---- «Мои приложения» ---- */
+.myapp-actions{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
+.myapp-group{font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--faint); margin:14px 0 8px;}
+.myapp-group:first-child{margin-top:0;}
+.nav-burger{display:none;}
+.support-link{color:var(--star) !important;}
+@media (max-width:900px){ .nav-burger{display:flex;} }
+/* ---- мобильная оптимизация остального сайта ---- */
+@media (max-width:640px){
+  .wrap{padding:0 14px;}
+  .hero{padding:34px 0 26px;}
+  .section-head h2{font-size:20px;}
+  section{padding:30px 0;}
+  .android-card{padding:14px;}
+  .android-selects{width:100%;}
+  .android-selects .btn, .android-selects .sel{flex:1 1 auto; justify-content:center;}
+  .editor-tabs{overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+  .editor-tabs::-webkit-scrollbar{display:none;}
+  .editor-tabs button{flex:none;}
+  .editor-panel{padding:14px;}
+  .preview-wrap{position:static;}
+  .modal{padding:20px 16px; max-height:92vh;}
+  .theme-grid{grid-template-columns:repeat(2,1fr);}
+  .foot-cols{gap:28px;}
+  .outbox-item{flex-wrap:wrap;}
+  .outbox-time{width:100%;}
+  .user-menu{right:-6px; min-width:210px; max-width:calc(100vw - 24px);}
+  .seg button{white-space:normal;}
+}
 .user-search{padding:16px; margin-bottom:18px;}
 .user-search input{width:100%; padding:10px 12px; border-radius:11px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:13.5px; font-family:inherit; outline:none;}
 .user-search input:focus{border-color:var(--primary);}
@@ -308,6 +337,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
         <option value="Asia/Almaty">GMT+5 Алматы</option>
         <option value="Asia/Novosibirsk">GMT+7 Новосибирск</option>
       </select>
+      <button class="icon-btn nav-burger" id="navBurger" aria-label="Меню" aria-haspopup="menu">☰</button>
       <button class="icon-btn theme-dot-btn" id="openSettings" title="Внешний вид"></button>
       <div class="user-menu-wrap">
         <button class="btn btn-ghost" id="openAuthBtn" aria-haspopup="menu" aria-expanded="false">Войти</button>
@@ -319,6 +349,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
           <button class="um-item" role="menuitem" data-view="profile">👤 Профиль</button>
           <button class="um-item" role="menuitem" data-view="requests">📝 Заявки</button>
           <button class="um-item" role="menuitem" data-view="notifications">🔔 Уведомления</button>
+          <button class="um-item" role="menuitem" id="umDonate">⭐ Поддержать проект</button>
           <div class="um-sep"></div>
           <div class="um-label">Настройки</div>
           <button class="um-item" role="menuitem" id="umAppearance">🎨 Внешний вид</button>
@@ -387,6 +418,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
             <button data-pane="effects">Эффекты</button>
             <button data-pane="links">Ссылки</button>
             <button data-pane="stats">Статистика</button>
+            <button data-pane="myapps">Мои приложения</button>
           </div>
           <div class="editor-panel">
 
@@ -485,6 +517,13 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
               <button class="btn btn-ghost btn-sm" id="addLinkBtn" style="width:100%; justify-content:center; margin-top:8px;">+ Добавить ссылку</button>
             </div>
 
+            <div class="editor-pane" id="pane-myapps">
+              <div class="pane-title">Мои приложения</div>
+              <div class="pane-sub">Опубликованные вами приложения и ваши заявки на добавление: статус, причина отказа, повторная отправка.</div>
+              <div id="myAppsList"><div class="empty-state">Откройте вкладку, чтобы загрузить список</div></div>
+              <button class="btn btn-ghost btn-sm" id="myAppsRefresh" style="margin-top:10px;">↻ Обновить</button>
+            </div>
+
             <div class="editor-pane" id="pane-stats">
               <div class="pane-title">Статистика</div>
               <div class="pane-sub">Считается автоматически по действиям на сайте, но начальные числа можно задать вручную.</div>
@@ -580,7 +619,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
         <div class="foot-col"><h4>Разделы</h4>
           <a href="#" data-goto="android">Каталог</a><a href="#" data-goto="profile">Профиль</a><a href="#" data-goto="requests">Заявки</a></div>
         <div class="foot-col"><h4>Платформа</h4>
-          <a href="#" data-goto="notifications">Уведомления</a><a href="#" id="footSettings">Настройки</a><a href="#" id="footAuth">Аккаунт</a></div>
+          <a href="#" data-goto="notifications">Уведомления</a><a href="#" id="footSettings">Настройки</a><a href="#" id="footAuth">Аккаунт</a><a href="donate.html" class="support-link">⭐ Поддержать</a></div>
       </div>
     </div>
     <div class="foot-bottom">© 2026 DevHub. Все права защищены.</div>
@@ -898,18 +937,33 @@ function closeUserMenu(){
 }
 function renderUserMenu(){
   const head = document.getElementById('umHead');
-  if(!head || !currentUser) return;
-  const name = escapeHtml(currentUser.name || 'Пользователь');
-  const av = currentUser.avatarUrl
-    ? `<img src="${currentUser.avatarUrl}" alt="">`
-    : `<span class="um-ph">${name[0] ? name[0].toUpperCase() : '?'}</span>`;
-  const roleLabel = ROLE_LABELS[state.profile.role];
-  const badge = roleLabel ? `<span class="role-badge role-${state.profile.role}" style="margin-left:0; margin-top:3px;">${roleLabel}</span>` : '';
-  head.innerHTML = `${av}<div style="min-width:0;"><div class="um-name">${name}</div>${badge}</div>`;
+  if(!head) return;
+  const signOut = document.getElementById('umSignOut');
+  if(signOut) signOut.style.display = currentUser ? '' : 'none';
+  if(currentUser){
+    const name = escapeHtml(currentUser.name || 'Пользователь');
+    const av = currentUser.avatarUrl
+      ? `<img src="${currentUser.avatarUrl}" alt="">`
+      : `<span class="um-ph">${name[0] ? name[0].toUpperCase() : '?'}</span>`;
+    const roleLabel = ROLE_LABELS[state.profile.role];
+    const badge = roleLabel ? `<span class="role-badge role-${state.profile.role}" style="margin-left:0; margin-top:3px;">${roleLabel}</span>` : '';
+    head.style.display = '';
+    head.innerHTML = `${av}<div style="min-width:0;"><div class="um-name">${name}</div>${badge}</div>`;
+  } else {
+    head.style.display = 'none';
+  }
   const activeTab = document.querySelector('.view.visible');
   const activeName = activeTab ? activeTab.id.replace('view-','') : '';
   document.querySelectorAll('#userMenu .um-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===activeName));
 }
+document.getElementById('navBurger').addEventListener('click', e=>{
+  e.stopPropagation();
+  const m = document.getElementById('userMenu');
+  const willOpen = !m.classList.contains('open');
+  if(willOpen) renderUserMenu();
+  m.classList.toggle('open', willOpen);
+});
+document.getElementById('umDonate').addEventListener('click', ()=>{ window.location.href = 'donate.html'; });
 document.getElementById('openAuthBtn').addEventListener('click', e=>{
   if(currentUser){
     e.stopPropagation();
@@ -1301,6 +1355,7 @@ document.querySelectorAll('#editorTabs button').forEach(b=>{
     document.querySelectorAll('#editorTabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
     document.querySelectorAll('.editor-pane').forEach(p=>p.classList.remove('on'));
     document.getElementById('pane-'+b.dataset.pane).classList.add('on');
+    if(b.dataset.pane === 'myapps') loadMyApps();
   });
 });
 
@@ -1647,6 +1702,107 @@ function startBgEffect(type){
   draw();
 }
 
+/* ===================== МОИ ПРИЛОЖЕНИЯ ===================== */
+let resubmitOfId = null;
+let myAppsCache = { apps: [], reqs: [] };
+const MYAPP_STATUS = {
+  pending:     {dot:'pending',  label:'⏳ На рассмотрении'},
+  rejected:    {dot:'rejected', label:'❌ Отклонено'},
+  resubmitted: {dot:'pending',  label:'🔁 Отправлено повторно'},
+  approved:    {dot:'approved', label:'✅ Опубликовано'},
+  archived:    {dot:'rejected', label:'🗄 Убрано из каталога'},
+};
+async function loadMyApps(){
+  const box = document.getElementById('myAppsList');
+  if(!box) return;
+  if(!currentUser || !sbClient){
+    box.innerHTML = '<div class="empty-state">Войдите в аккаунт, чтобы видеть свои приложения</div>';
+    return;
+  }
+  box.innerHTML = '<div class="empty-state">Загружаем…</div>';
+  const [appsRes, reqRes] = await Promise.all([
+    sbClient.from('apps').select('id, name, description, status, created_at').eq('added_by', currentUser.id).order('created_at', { ascending:false }),
+    sbClient.from('requests').select('id, type, app_name, link, github_url, message, contact, status, resolved_reason, created_at')
+      .eq('user_id', currentUser.id).eq('type', 'add').in('status', ['pending','rejected','resubmitted'])
+      .order('created_at', { ascending:false })
+  ]);
+  if(appsRes.error) console.error('loadMyApps(apps):', appsRes.error.message);
+  if(reqRes.error) console.error('loadMyApps(requests):', reqRes.error.message);
+  if(appsRes.error && reqRes.error){
+    box.innerHTML = '<div class="empty-state">Не удалось загрузить — попробуйте позже</div>';
+    return;
+  }
+  myAppsCache = { apps: appsRes.data || [], reqs: reqRes.data || [] };
+  renderMyApps();
+}
+function renderMyApps(){
+  const box = document.getElementById('myAppsList');
+  const { apps, reqs } = myAppsCache;
+  if(!apps.length && !reqs.length){
+    box.innerHTML = '<div class="empty-state">Пока ничего нет — предложите приложение во вкладке «Заявки».</div>';
+    return;
+  }
+  let html = '';
+  if(apps.length){
+    html += '<div class="myapp-group">В каталоге</div>';
+    html += apps.map((a, i)=>{
+      const m = MYAPP_STATUS[a.status] || MYAPP_STATUS.approved;
+      return `<div class="outbox-item card glass"><span class="outbox-dot ${m.dot}"></span>
+        <div style="flex:1; min-width:0;">
+          <div class="outbox-title">${escapeHtmlClient(a.name)}</div>
+          <div class="outbox-sub">${m.label}${a.description ? ' · ' + escapeHtmlClient(a.description).slice(0, 80) : ''}</div>
+          ${a.status === 'approved' ? `<div class="myapp-actions"><button class="btn btn-ghost btn-sm" data-myapp-remove="${i}">Запросить удаление</button></div>` : ''}
+        </div></div>`;
+    }).join('');
+  }
+  if(reqs.length){
+    html += '<div class="myapp-group">Заявки на добавление</div>';
+    html += reqs.map((r, i)=>{
+      const m = MYAPP_STATUS[r.status] || MYAPP_STATUS.pending;
+      return `<div class="outbox-item card glass"><span class="outbox-dot ${m.dot}"></span>
+        <div style="flex:1; min-width:0;">
+          <div class="outbox-title">${escapeHtmlClient(r.app_name || 'Без названия')}</div>
+          <div class="outbox-sub">${m.label} · ${new Date(r.created_at).toLocaleDateString('ru-RU')}</div>
+          ${r.status === 'rejected' && r.resolved_reason ? `<div class="verdict-reason">Причина отказа: ${escapeHtmlClient(r.resolved_reason)}</div>` : ''}
+          ${r.status === 'rejected' ? `<div class="myapp-actions"><button class="btn btn-primary btn-sm" data-myapp-resubmit="${i}">Исправить и отправить заново</button></div>` : ''}
+        </div></div>`;
+    }).join('');
+  }
+  box.innerHTML = html;
+  box.querySelectorAll('[data-myapp-remove]').forEach(b=>b.addEventListener('click', ()=>prefillRemoveRequest(myAppsCache.apps[+b.dataset.myappRemove])));
+  box.querySelectorAll('[data-myapp-resubmit]').forEach(b=>b.addEventListener('click', ()=>prefillResubmit(myAppsCache.reqs[+b.dataset.myappResubmit])));
+}
+function setVal(id, v){ const el = document.getElementById(id); if(el) el.value = v == null ? '' : v; }
+function prefillResubmit(r){
+  if(!r) return;
+  showView('requests');
+  document.querySelector('#reqType button[data-type="add"]').click();
+  setVal('reqName', r.app_name); setVal('reqLink', r.link); setVal('reqGithub', r.github_url || '');
+  setVal('reqComment', r.message); setVal('reqContact', r.contact);
+  resubmitOfId = r.id;
+  showToast('Исправьте данные с учётом причины отказа и отправьте заявку');
+}
+function prefillRemoveRequest(a){
+  if(!a) return;
+  showView('requests');
+  document.querySelector('#reqType button[data-type="remove"]').click();
+  fillReqAppSelect();
+  const sel = document.getElementById('reqAppSelect');
+  if(sel) sel.value = a.id;
+  setVal('reqComment', '');
+  const c = document.getElementById('reqComment'); if(c) c.focus();
+  resubmitOfId = null;
+  showToast('Укажите причину удаления и отправьте заявку');
+}
+async function markResubmitted(id){
+  if(!sbClient || !currentUser || !id) return;
+  try{
+    const { error } = await sbClient.from('requests').update({ status:'resubmitted' }).eq('id', id).eq('user_id', currentUser.id);
+    if(error) console.warn('Не удалось пометить заявку как отправленную повторно:', error.message);
+  }catch(e){ console.warn(e); }
+}
+document.getElementById('myAppsRefresh').addEventListener('click', loadMyApps);
+
 /* ===================== REQUESTS -> OUTBOX + Supabase + Telegram ===================== */
 let reqType = 'add';
 function updateReqFieldsVisibility(){
@@ -1721,6 +1877,8 @@ document.getElementById('reqSubmit').addEventListener('click', async ()=>{
   }
 
   const result = await sendToBackend(payload);
+  if(result.ok && resubmitOfId && reqType === 'add'){ markResubmitted(resubmitOfId); }
+  if(result.ok) resubmitOfId = null;
   outbox.unshift({title:summaryTitle, sub: summarySub, status: result.ok?'sent':'pending', time:new Date().toLocaleString('ru-RU')});
   try{ localStorage.setItem('devhub_outbox', JSON.stringify(outbox.slice(0,50))); }catch(e){}
   state.profile.statSuggestions = (state.profile.statSuggestions||0) + 1;

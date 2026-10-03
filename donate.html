@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="night">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Поддержать — DevHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --radius-sm:10px; --radius-md:16px; --radius-lg:24px;
+  --shadow:0 1px 2px rgba(0,0,0,.25), 0 20px 40px -20px rgba(0,0,0,.55);
+  --dur:.3s;
+}
+html[data-theme="night"]{ --bg:#0A0B10; --bg2:#111319; --surface:#15171F; --surface2:#1B1E28; --border:#262A36; --text:#F2F3F9; --muted:#9498B2; --faint:#666B84; --primary:#8B7CFF; --primary-d:#7566F0; --primary-soft:#241F3D; --on-primary:#0A0B10; --star:#FFC65C; --a:#453BAA; --b:#8B7CFF; }
+html[data-theme="day"]{ --bg:#EDF0FA; --bg2:#F7F8FD; --surface:#FFFFFF; --surface2:#FBFBFF; --border:#E1E4F1; --text:#181B29; --muted:#666C85; --faint:#9498AC; --primary:#6D5DF6; --primary-d:#5747E4; --primary-soft:#ECE9FE; --on-primary:#fff; --star:#F5A623; --a:#6D5DF6; --b:#B18CFF; }
+html[data-theme="apple"]{ --bg:#0E1A11; --bg2:#132218; --surface:#16261B; --surface2:#1B2D20; --border:#243A2B; --text:#EAF7EE; --muted:#8FB59B; --faint:#5C7A66; --primary:#3FD873; --primary-d:#2FB55E; --primary-soft:#193A24; --on-primary:#06170B; --star:#EFA93B; --a:#3FD873; --b:#8CE6A8; }
+html[data-theme="warm"]{ --bg:#1C120A; --bg2:#241708; --surface:#28190C; --surface2:#301E0F; --border:#3C260F; --text:#FCE9D6; --muted:#C29868; --faint:#8A6A45; --primary:#F0762F; --primary-d:#D75F1C; --primary-soft:#3A2510; --on-primary:#1C120A; --star:#E8A33D; --a:#F0762F; --b:#FFC069; }
+html[data-theme="frost"]{ --bg:#081418; --bg2:#0C1B20; --surface:#0F2027; --surface2:#122731; --border:#1B3540; --text:#E4F6FA; --muted:#7FB6C4; --faint:#4C7C8B; --primary:#22C3EE; --primary-d:#0FA6CC; --primary-soft:#123640; --on-primary:#06181C; --star:#E7B23A; --a:#22C3EE; --b:#7FE0E0; }
+html[data-theme="violet"]{ --bg:#150A1F; --bg2:#1C0E29; --surface:#1F1030; --surface2:#26143A; --border:#33195080; --text:#F1E6FB; --muted:#B49BC6; --faint:#7A6490; --primary:#B25CF0; --primary-d:#9A46E0; --primary-soft:#2E1745; --on-primary:#150A1F; --star:#E6A93D; --a:#B25CF0; --b:#E38CE6; }
+html[data-theme="mono"]{ --bg:#0C0C0D; --bg2:#131314; --surface:#18181A; --surface2:#1E1E21; --border:#2A2A2E; --text:#F4F4F5; --muted:#A0A0A8; --faint:#65656C; --primary:#E5E5EA; --primary-d:#FFFFFF; --primary-soft:#232326; --on-primary:#0C0C0D; --star:#C8C8CE; --a:#8A8A92; --b:#E5E5EA; }
+html[data-theme="sakura"]{ --bg:#1E0E15; --bg2:#26121B; --surface:#2A1520; --surface2:#331827; --border:#3F1E30; --text:#FDEAF1; --muted:#D79BB1; --faint:#93576C; --primary:#F0699C; --primary-d:#E8558B; --primary-soft:#3A1B2C; --on-primary:#1E0E15; --star:#E8A33D; --a:#F0699C; --b:#FFB0C9; }
+html[data-theme="emerald"]{ --bg:#071912; --bg2:#0B2318; --surface:#0E2A1D; --surface2:#123424; --border:#1B4530; --text:#E3FAEE; --muted:#7FC7A5; --faint:#3F7C60; --primary:#16C381; --primary-d:#0C8F5B; --primary-soft:#123F2B; --on-primary:#04140D; --star:#E0A93B; --a:#16C381; --b:#57D9A6; }
+html[data-theme="russia"]{ --bg:#0A0E17; --bg2:#0E1420; --surface:#121A29; --surface2:#172033; --border:#22304A; --text:#F5F7FB; --muted:#9FB0CC; --faint:#5E6E8E; --primary:#2159C7; --primary-d:#173F94; --primary-soft:#1A2C4D; --on-primary:#FFFFFF; --star:#E7C23A; --a:#D52B3E; --b:#2159C7; }
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+#bgVideoLayer{position:fixed; inset:0; z-index:-2; overflow:hidden; background:var(--bg);}
+#bgVideoLayer video,#bgVideoLayer img{width:100%; height:100%; object-fit:cover; filter:saturate(1.05);}
+#bgDim{position:fixed; inset:0; z-index:-1; background:var(--bg); opacity:.72;}
+#bgEffect{position:fixed; inset:0; z-index:-1; pointer-events:none;}
+.track-player{display:flex; align-items:center; gap:10px; max-width:340px; margin:16px auto 0; padding:8px 12px; border-radius:14px;}
+.track-player button{width:34px; height:34px; border-radius:50%; border:none; background:var(--primary); color:var(--on-primary); font-size:13px; flex:none; display:flex; align-items:center; justify-content:center;}
+.track-player .tp-name{flex:1; min-width:0; font-size:12.5px; font-weight:600; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.track-player input[type=range]{width:70px; flex:none; accent-color:var(--primary);}
+body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; min-height:100vh;}
+h1,h2,h3,.brand{font-family:'Manrope',sans-serif;}
+a{color:inherit; text-decoration:none;}
+button{font-family:inherit; cursor:pointer;}
+img{max-width:100%; display:block;}
+.wrap{max-width:720px; margin:0 auto; padding:0 20px;}
+
+.glass{
+  background:color-mix(in srgb, var(--surface) 58%, transparent);
+  backdrop-filter:blur(22px) saturate(160%); -webkit-backdrop-filter:blur(22px) saturate(160%);
+  border:1px solid color-mix(in srgb, var(--surface) 40%, white 18%);
+  box-shadow:inset 0 1px 0 color-mix(in srgb, white 12%, transparent), var(--shadow);
+}
+.card{border-radius:var(--radius-md);}
+
+.topbar{padding:16px 0;}
+.brand{display:flex; align-items:center; gap:9px; font-weight:800; font-size:17px; white-space:nowrap;}
+.brand .mark{width:30px; height:30px; border-radius:9px; flex:none; background:conic-gradient(from 210deg, var(--a), var(--b), var(--a)); position:relative;}
+.brand .mark::after{content:""; position:absolute; inset:7px; border-radius:5px; background:var(--surface);}
+
+.btn{font-weight:600; font-size:13.5px; border-radius:12px; padding:9px 15px; border:1px solid transparent; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
+.btn-primary{background:var(--primary); color:var(--on-primary);}
+.btn-ghost{background:var(--surface2); color:var(--text); border-color:var(--border);}
+.btn-sm{padding:6px 11px; font-size:12px; border-radius:9px;}
+
+.profile-hero{padding:32px 24px; text-align:center; margin-bottom:20px;}
+.profile-avatar{width:96px; height:96px; border-radius:50%; margin:0 auto 16px; overflow:hidden; background:var(--primary-soft); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:32px; color:var(--primary);}
+.profile-avatar img{width:100%; height:100%; object-fit:cover;}
+.profile-name{font-size:22px; font-weight:800;}
+.role-badge{display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; margin-left:8px; vertical-align:middle;}
+/* Цвета ролей: хелпер/модератор — зелёные, отделы (app/gmoder) — жёлтые и второстепенные,
+   помощник генерала — синий, генерал — красный */
+.role-badge.role-helper,.role-badge.role-moder{background:rgba(52,199,89,.16); color:#4ade80; border:1px solid rgba(52,199,89,.38);}
+.role-badge.role-app,.role-badge.role-gmoder{background:rgba(234,179,8,.09); color:#cdb04a; border:1px solid rgba(234,179,8,.22); font-size:9.5px; font-weight:600; padding:2px 8px; opacity:.85;}
+.role-badge.role-howner{background:rgba(59,130,246,.18); color:#60a5fa; border:1px solid rgba(59,130,246,.42);}
+.role-badge.role-owner{background:rgba(239,68,68,.18); color:#f87171; border:1px solid rgba(239,68,68,.45);}
+html[data-theme="day"] .role-badge.role-helper,html[data-theme="day"] .role-badge.role-moder{color:#15803d;}
+html[data-theme="day"] .role-badge.role-app,html[data-theme="day"] .role-badge.role-gmoder{color:#8a6d0b;}
+html[data-theme="day"] .role-badge.role-howner{color:#1d4ed8;}
+html[data-theme="day"] .role-badge.role-owner{color:#b91c1c;}
+
+/* Авто-бейджи (не роли персонала — отдельная категория) */
+.user-badges{display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-top:10px;}
+.user-badge{font-size:11.5px; font-weight:600; padding:4px 11px; border-radius:999px; background:var(--primary-soft); color:var(--primary); border:1px solid color-mix(in srgb, var(--primary) 30%, transparent);}
+.profile-handle{font-size:13px; color:var(--muted); margin-top:2px;}
+.profile-bio{font-size:14px; color:var(--muted); line-height:1.6; margin-top:12px; max-width:480px; margin-left:auto; margin-right:auto;}
+.profile-loc{font-size:12.5px; color:var(--faint); margin-top:8px;}
+.profile-links{display:flex; justify-content:center; gap:8px; margin-top:16px; flex-wrap:wrap;}
+.profile-links a{width:38px; height:38px; border-radius:50%; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:16px;}
+.profile-stats{display:flex; justify-content:center; gap:28px; margin-top:18px;}
+.profile-stat b{display:block; font-size:18px;}
+.profile-stat span{font-size:11.5px; color:var(--faint);}
+
+.section-title{font-size:15px; font-weight:700; margin:24px 0 12px;}
+.tool-icon{width:40px; height:40px; border-radius:12px; flex:none; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px;}
+.app-row{display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:var(--radius-md); margin-bottom:8px;}
+.app-meta{flex:1; min-width:0;}
+.app-name{font-weight:700; font-size:14px;}
+.app-desc{font-size:12.5px; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.app-rating{font-size:12px; font-weight:700; color:var(--star); white-space:nowrap;}
+
+.empty-state{padding:40px 20px; text-align:center; color:var(--faint); font-size:13.5px;}
+.loading-state{padding:60px 20px; text-align:center; color:var(--faint);}
+
+.donate-hero{padding:30px 24px; text-align:center; margin-bottom:18px;}
+.donate-hero h1{font-size:26px; font-weight:800; margin-bottom:8px;}
+.donate-hero p{font-size:14px; color:var(--muted); line-height:1.6; max-width:480px; margin:0 auto;}
+.donate-total{margin-top:16px; font-size:13px; color:var(--faint);}
+.donate-total b{color:var(--star); font-size:17px;}
+.amounts{display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:20px 0 12px;}
+.amount-chip{padding:12px 4px; border-radius:12px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-weight:700; font-size:14px;}
+.amount-chip.on{border-color:var(--star); background:color-mix(in srgb, var(--star) 16%, var(--surface2)); color:var(--star);}
+.custom-row{display:flex; gap:8px; align-items:center; justify-content:center; margin-bottom:14px;}
+.custom-row input[type=number]{width:140px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:14px; text-align:center;}
+.anon-row{display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; color:var(--muted); margin-bottom:16px;}
+.anon-row input{accent-color:var(--primary);}
+.btn-donate{background:var(--star); color:#1a1200; font-size:15px; padding:13px 26px; border-radius:14px; font-weight:800; border:none;}
+.btn-donate[disabled]{opacity:.55; cursor:default;}
+.donate-note{font-size:12px; color:var(--faint); margin-top:12px; min-height:16px;}
+.donor-row{display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:var(--radius-md); margin-bottom:8px;}
+.donor-pos{width:26px; text-align:center; font-weight:800; color:var(--faint); flex:none;}
+.donor-av{width:38px; height:38px; border-radius:50%; overflow:hidden; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; flex:none;}
+.donor-av img{width:100%; height:100%; object-fit:cover;}
+.donor-name{flex:1; min-width:0; font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.donor-sum{font-weight:800; color:var(--star); white-space:nowrap; font-size:14px;}
+@media (max-width:520px){ .amounts{grid-template-columns:repeat(3,1fr);} .donate-hero{padding:24px 16px;} }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar" style="display:flex; align-items:center; justify-content:space-between;">
+    <a class="brand" href="index.html"><div class="mark"></div><span>DevHub</span></a>
+    <a class="btn btn-ghost btn-sm" href="index.html">← На сайт</a>
+  </div>
+
+  <div class="donate-hero card glass">
+    <h1>⭐ Поддержать DevHub</h1>
+    <p>DevHub — независимый каталог Android-инструментов для разработчиков. Донаты Telegram Stars идут на развитие сайта и хостинг. Это добровольно и ничего не блокирует.</p>
+    <div class="donate-total" id="donateTotal"></div>
+
+    <div class="amounts" id="amounts">
+      <button class="amount-chip" data-amount="50">50 ⭐</button>
+      <button class="amount-chip on" data-amount="100">100 ⭐</button>
+      <button class="amount-chip" data-amount="250">250 ⭐</button>
+      <button class="amount-chip" data-amount="500">500 ⭐</button>
+      <button class="amount-chip" data-amount="1000">1000 ⭐</button>
+    </div>
+    <div class="custom-row">
+      <span style="font-size:13px; color:var(--muted);">Своя сумма:</span>
+      <input type="number" id="customAmount" min="1" max="100000" placeholder="например, 75">
+    </div>
+    <label class="anon-row"><input type="checkbox" id="anonCheck"> <span id="anonLabel">Не показывать меня в топе</span></label>
+    <button class="btn-donate" id="donateBtn">Поддержать на 100 ⭐</button>
+    <div class="donate-note" id="donateNote"></div>
+  </div>
+
+  <div class="section-title">🏆 Топ донатеров</div>
+  <div id="donors"><div class="loading-state">Загружаем…</div></div>
+</div>
+
+<script>
+const REPORT_ENDPOINT = 'https://devhub-relay.cryptomail14dash.workers.dev';
+const SUPABASE_URL = 'https://nnuauvwjeiewituexgsj.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_H993QAi7e7uhkL_UfF-uRA_cDIHdcoM';
+let sbClient = null;
+try{
+  if(window.supabase && typeof window.supabase.createClient === 'function'){
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  }
+}catch(e){ console.error('Ошибка инициализации Supabase:', e); }
+
+try{
+  const saved = JSON.parse(localStorage.getItem('devhub_settings'));
+  if(saved?.theme) document.documentElement.setAttribute('data-theme', saved.theme);
+}catch(e){}
+
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+let amount = 100;
+let accessToken = null;
+const donateBtn = document.getElementById('donateBtn');
+const customInput = document.getElementById('customAmount');
+
+function setAmount(n){
+  amount = n;
+  donateBtn.textContent = `Поддержать на ${n} ⭐`;
+}
+document.querySelectorAll('#amounts .amount-chip').forEach(b=>b.addEventListener('click', ()=>{
+  document.querySelectorAll('#amounts .amount-chip').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); customInput.value = '';
+  setAmount(Number(b.dataset.amount));
+}));
+customInput.addEventListener('input', ()=>{
+  const v = Math.floor(Number(customInput.value));
+  document.querySelectorAll('#amounts .amount-chip').forEach(x=>x.classList.remove('on'));
+  if(v >= 1 && v <= 100000) setAmount(v);
+});
+
+async function initAuth(){
+  const anon = document.getElementById('anonCheck');
+  const label = document.getElementById('anonLabel');
+  if(!sbClient){ anon.checked = true; anon.disabled = true; return; }
+  try{
+    const { data } = await sbClient.auth.getSession();
+    accessToken = data?.session?.access_token || null;
+  }catch(e){}
+  if(!accessToken){
+    anon.checked = true; anon.disabled = true;
+    label.innerHTML = 'Анонимно — <a href="index.html" style="color:var(--primary); text-decoration:underline;">войдите</a>, чтобы попасть в топ и получить бейдж';
+  }
+}
+
+donateBtn.addEventListener('click', async ()=>{
+  const note = document.getElementById('donateNote');
+  if(!(amount >= 1 && amount <= 100000)){ note.textContent = 'Укажите сумму от 1 до 100 000 ⭐'; return; }
+  donateBtn.disabled = true; note.textContent = 'Создаём счёт…';
+  try{
+    const res = await fetch(REPORT_ENDPOINT + '/donate/link', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ amount, anonymous: document.getElementById('anonCheck').checked, access_token: accessToken })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok || !data.link) throw new Error(data.error || 'Не удалось создать счёт');
+    note.textContent = 'Открываем Telegram для оплаты…';
+    window.location.href = data.link;
+  }catch(e){
+    note.textContent = 'Ошибка: ' + (e.message || e) + '. Попробуйте позже.';
+  }finally{
+    setTimeout(()=>{ donateBtn.disabled = false; }, 2500);
+  }
+});
+
+async function loadDonors(){
+  const box = document.getElementById('donors');
+  if(!sbClient){ box.innerHTML = '<div class="empty-state">Сервис недоступен</div>'; return; }
+  try{
+    const { data: totals } = await sbClient.from('donation_totals').select('total, donations').maybeSingle();
+    if(totals && totals.donations){
+      document.getElementById('donateTotal').innerHTML = `Уже собрано: <b>${totals.total} ⭐</b> · донатов: ${totals.donations}`;
+    }
+  }catch(e){}
+  const { data, error } = await sbClient.from('top_donors').select('user_id, display_name, handle, avatar_url, total').order('total', { ascending:false }).limit(20);
+  if(error){ console.warn(error.message); box.innerHTML = '<div class="empty-state card glass">Топ пока недоступен</div>'; return; }
+  if(!data || !data.length){ box.innerHTML = '<div class="empty-state card glass">Станьте первым — ваше имя появится здесь 🙂</div>'; return; }
+  const medals = ['🥇','🥈','🥉'];
+  box.innerHTML = data.map((d,i)=>{
+    const name = escapeHtml(d.display_name || d.handle || 'Пользователь');
+    const av = d.avatar_url ? `<img src="${escapeHtml(d.avatar_url)}" alt="">` : (name[0] || '?').toUpperCase();
+    return `<a class="donor-row card glass" href="profile.html?id=${encodeURIComponent(d.user_id)}">
+      <div class="donor-pos">${medals[i] || (i+1)}</div>
+      <div class="donor-av">${av}</div>
+      <div class="donor-name">${name}</div>
+      <div class="donor-sum">${d.total} ⭐</div>
+    </a>`;
+  }).join('');
+}
+
+initAuth();
+loadDonors();
+</script>
+</body>
+</html>

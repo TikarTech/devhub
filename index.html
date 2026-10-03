@@ -73,9 +73,30 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .btn-sm{padding:6px 11px; font-size:12px; border-radius:9px;}
 .avatar-chip{display:flex; align-items:center; gap:7px; background:var(--surface2); border:1px solid var(--border); border-radius:999px; padding:5px 12px 5px 5px; font-size:13px; font-weight:600;}
 .role-badge{display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; margin-left:6px; vertical-align:middle; letter-spacing:.2px;}
-.role-badge.role-owner, .role-badge.role-howner{background:linear-gradient(120deg,var(--a),var(--b)); color:#fff;}
-.role-badge.role-moder, .role-badge.role-gmoder{background:var(--primary-soft); color:var(--primary);}
-.role-badge.role-helper, .role-badge.role-app{background:var(--surface2); color:var(--muted); border:1px solid var(--border);}
+/* Цвета ролей: хелпер/модератор — зелёные, отделы (app/gmoder) — жёлтые и второстепенные,
+   помощник генерала — синий, генерал — красный */
+.role-badge.role-helper, .role-badge.role-moder{background:rgba(52,199,89,.16); color:#4ade80; border:1px solid rgba(52,199,89,.38);}
+.role-badge.role-app, .role-badge.role-gmoder{background:rgba(234,179,8,.09); color:#cdb04a; border:1px solid rgba(234,179,8,.22); font-size:9.5px; font-weight:600; padding:1px 7px; opacity:.85;}
+.role-badge.role-howner{background:rgba(59,130,246,.18); color:#60a5fa; border:1px solid rgba(59,130,246,.42);}
+.role-badge.role-owner{background:rgba(239,68,68,.18); color:#f87171; border:1px solid rgba(239,68,68,.45);}
+html[data-theme="day"] .role-badge.role-helper, html[data-theme="day"] .role-badge.role-moder{color:#15803d;}
+html[data-theme="day"] .role-badge.role-app, html[data-theme="day"] .role-badge.role-gmoder{color:#8a6d0b;}
+html[data-theme="day"] .role-badge.role-howner{color:#1d4ed8;}
+html[data-theme="day"] .role-badge.role-owner{color:#b91c1c;}
+
+/* ---- выпадающее меню аватарки ---- */
+.user-menu-wrap{position:relative;}
+.user-menu{position:absolute; right:0; top:calc(100% + 10px); min-width:232px; padding:8px; border-radius:16px; z-index:60; display:none; background:color-mix(in srgb, var(--surface) 92%, transparent);}
+.user-menu.open{display:block; animation:viewIn .18s cubic-bezier(.22,.9,.3,1);}
+.um-head{display:flex; align-items:center; gap:9px; padding:8px 10px 10px; border-bottom:1px solid var(--border); margin-bottom:6px; min-width:0;}
+.um-head img, .um-head .um-ph{width:32px; height:32px; border-radius:50%; object-fit:cover; flex:none; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px;}
+.um-name{font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.um-label{font-size:10.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--faint); padding:6px 10px 3px;}
+.um-item{display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:transparent; border:none; color:var(--text); font-size:13.5px; font-weight:600; padding:8px 10px; border-radius:10px;}
+.um-item:hover{background:var(--surface2);}
+.um-item.active{color:var(--primary);}
+.um-item.danger{color:#f87171;}
+.um-sep{height:1px; background:var(--border); margin:6px 4px;}
 .avatar-chip img{width:24px; height:24px; border-radius:50%; object-fit:cover;}
 
 /* ---- views ---- */
@@ -288,7 +309,22 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
         <option value="Asia/Novosibirsk">GMT+7 Новосибирск</option>
       </select>
       <button class="icon-btn theme-dot-btn" id="openSettings" title="Внешний вид"></button>
-      <button class="btn btn-ghost" id="openAuthBtn">Войти</button>
+      <div class="user-menu-wrap">
+        <button class="btn btn-ghost" id="openAuthBtn" aria-haspopup="menu" aria-expanded="false">Войти</button>
+        <div class="user-menu glass" id="userMenu" role="menu">
+          <div class="um-head" id="umHead"></div>
+          <div class="um-label">Навигация</div>
+          <button class="um-item" role="menuitem" data-view="home">🏠 Главная</button>
+          <button class="um-item" role="menuitem" data-view="android">📱 Каталог</button>
+          <button class="um-item" role="menuitem" data-view="profile">👤 Профиль</button>
+          <button class="um-item" role="menuitem" data-view="requests">📝 Заявки</button>
+          <button class="um-item" role="menuitem" data-view="notifications">🔔 Уведомления</button>
+          <div class="um-sep"></div>
+          <div class="um-label">Настройки</div>
+          <button class="um-item" role="menuitem" id="umAppearance">🎨 Внешний вид</button>
+          <button class="um-item danger" role="menuitem" id="umSignOut">🚪 Выйти из аккаунта</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -807,6 +843,7 @@ function applyTheme(id){
   document.documentElement.setAttribute('data-theme', id);
   document.querySelectorAll('#themeGrid .theme-card').forEach(c=>c.classList.toggle('selected', c.dataset.theme===id));
   state.theme = id;
+  if(currentUser && typeof schedulePersistProfile === 'function') schedulePersistProfile(); // тема владельца видна гостям на его странице
   if(id==='russia'){
     state.profile.bg = 'russia';
     applyBackground('russia');
@@ -854,13 +891,45 @@ document.querySelectorAll('#authTabs button').forEach(b=>{
 
 /* Кнопка в топбаре/футере: если юзер не залогинен — открывает модалку входа,
    если залогинен — переходит в свой профиль (там же теперь есть кнопка "Выйти"). */
-document.getElementById('openAuthBtn').addEventListener('click', ()=>{
+function closeUserMenu(){
+  const m = document.getElementById('userMenu'); if(!m) return;
+  m.classList.remove('open');
+  document.getElementById('openAuthBtn').setAttribute('aria-expanded','false');
+}
+function renderUserMenu(){
+  const head = document.getElementById('umHead');
+  if(!head || !currentUser) return;
+  const name = escapeHtml(currentUser.name || 'Пользователь');
+  const av = currentUser.avatarUrl
+    ? `<img src="${currentUser.avatarUrl}" alt="">`
+    : `<span class="um-ph">${name[0] ? name[0].toUpperCase() : '?'}</span>`;
+  const roleLabel = ROLE_LABELS[state.profile.role];
+  const badge = roleLabel ? `<span class="role-badge role-${state.profile.role}" style="margin-left:0; margin-top:3px;">${roleLabel}</span>` : '';
+  head.innerHTML = `${av}<div style="min-width:0;"><div class="um-name">${name}</div>${badge}</div>`;
+  const activeTab = document.querySelector('.view.visible');
+  const activeName = activeTab ? activeTab.id.replace('view-','') : '';
+  document.querySelectorAll('#userMenu .um-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===activeName));
+}
+document.getElementById('openAuthBtn').addEventListener('click', e=>{
   if(currentUser){
-    showView('profile');
+    e.stopPropagation();
+    const m = document.getElementById('userMenu');
+    const willOpen = !m.classList.contains('open');
+    if(willOpen){ renderUserMenu(); }
+    m.classList.toggle('open', willOpen);
+    e.currentTarget.setAttribute('aria-expanded', String(willOpen));
   } else {
     openModal('authBackdrop');
   }
 });
+document.querySelectorAll('#userMenu .um-item[data-view]').forEach(b=>b.addEventListener('click', ()=>{ closeUserMenu(); showView(b.dataset.view); }));
+document.getElementById('umAppearance').addEventListener('click', ()=>{ closeUserMenu(); renderThemeGrid(); openModal('settingsBackdrop'); });
+document.getElementById('umSignOut').addEventListener('click', ()=>{
+  closeUserMenu();
+  if(confirm(`Выйти из аккаунта ${currentUser?.email || ''}?`)) signOutUser();
+});
+document.addEventListener('click', e=>{ if(!e.target.closest('.user-menu-wrap')) closeUserMenu(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeUserMenu(); });
 document.getElementById('footAuth').addEventListener('click', e=>{
   e.preventDefault();
   if(currentUser){
@@ -975,6 +1044,7 @@ function updateAuthUI(){
     if(hint) hint.textContent = 'вход выполнен';
     if(signOutBtn) signOutBtn.style.display = 'inline-flex';
   } else {
+    closeUserMenu();
     btn.className = 'btn btn-ghost';
     btn.textContent = 'Войти';
     const hint = document.getElementById('scopeAccountHint');
@@ -1038,10 +1108,10 @@ async function loadProfileFromSupabase(userId){
     loc: data.location || state.profile.loc,
     avatar: data.avatar_url || null,
     role: data.role || 'user',
-    bg: data.bg_url ? 'custom' : state.profile.bg,
+    bg: data.bg_url ? 'custom' : (data.bg_preset || state.profile.bg),
     bgCustom: data.bg_url || null,
     bgType: data.bg_type || null,
-    track: data.track_url ? 'custom' : state.profile.track,
+    track: data.track_url ? 'custom' : (data.track_preset || state.profile.track),
     trackCustom: data.track_url || null,
     trackName: data.track_name || null,
     links: Array.isArray(data.links) && data.links.length ? data.links : state.profile.links,
@@ -1061,6 +1131,14 @@ async function loadProfileFromSupabase(userId){
     autoplay: c.autoplay ?? state.profile.autoplay
   });
   if(currentUser) currentUser.avatarUrl = data.avatar_url || null;
+
+  // Тема из облака — только если на этом устройстве тема не выбрана вручную
+  let deviceTheme = null;
+  try{ deviceTheme = JSON.parse(localStorage.getItem('devhub_settings'))?.theme || null; }catch(e){}
+  if(data.theme && !deviceTheme && themes.some(t=>t.id===data.theme)){
+    state.theme = data.theme;
+    document.documentElement.setAttribute('data-theme', data.theme);
+  }
 }
 
 /* Сохраняет весь профиль текущего юзера в Supabase (полный снимок state.profile) */
@@ -1078,6 +1156,9 @@ async function saveProfileToSupabase(){
     bg_type: p.bg === 'custom' ? (p.bgType || null) : null,
     track_url: p.track === 'custom' ? (p.trackCustom || null) : null,
     track_name: p.track === 'custom' ? (p.trackName || null) : null,
+    theme: state.theme || null,
+    bg_preset: p.bg !== 'custom' ? (p.bg || null) : null,
+    track_preset: p.track !== 'custom' ? (p.track || null) : null,
     links: p.links || [],
     stat_downloads: p.statDownloads || 0,
     stat_suggestions: p.statSuggestions || 0,
@@ -1087,7 +1168,13 @@ async function saveProfileToSupabase(){
       dim: p.dim, volume: p.volume, autoplay: p.autoplay
     }
   };
-  const { error } = await sbClient.from('profiles').upsert(row);
+  let { error } = await sbClient.from('profiles').upsert(row);
+  if(error && /theme|bg_preset|track_preset|schema cache|column/i.test(error.message || '')){
+    // миграция БД ещё не применена — сохраняем остальное, чтобы профиль не ломался
+    console.warn('Новые колонки profiles отсутствуют, сохраняю без них:', error.message);
+    const { theme, bg_preset, track_preset, ...legacyRow } = row;
+    ({ error } = await sbClient.from('profiles').upsert(legacyRow));
+  }
   if(error) throw new Error(error.message || 'Не удалось сохранить профиль');
 }
 

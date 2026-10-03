@@ -26,6 +26,14 @@ html[data-theme="russia"]{ --bg:#0A0E17; --bg2:#0E1420; --surface:#121A29; --sur
 
 *{box-sizing:border-box; margin:0; padding:0;}
 html{scroll-behavior:smooth;}
+#bgVideoLayer{position:fixed; inset:0; z-index:-2; overflow:hidden; background:var(--bg);}
+#bgVideoLayer video,#bgVideoLayer img{width:100%; height:100%; object-fit:cover; filter:saturate(1.05);}
+#bgDim{position:fixed; inset:0; z-index:-1; background:var(--bg); opacity:.72;}
+#bgEffect{position:fixed; inset:0; z-index:-1; pointer-events:none;}
+.track-player{display:flex; align-items:center; gap:10px; max-width:340px; margin:16px auto 0; padding:8px 12px; border-radius:14px;}
+.track-player button{width:34px; height:34px; border-radius:50%; border:none; background:var(--primary); color:var(--on-primary); font-size:13px; flex:none; display:flex; align-items:center; justify-content:center;}
+.track-player .tp-name{flex:1; min-width:0; font-size:12.5px; font-weight:600; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.track-player input[type=range]{width:70px; flex:none; accent-color:var(--primary);}
 body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; min-height:100vh;}
 h1,h2,h3,.brand{font-family:'Manrope',sans-serif;}
 a{color:inherit; text-decoration:none;}
@@ -56,9 +64,20 @@ img{max-width:100%; display:block;}
 .profile-avatar img{width:100%; height:100%; object-fit:cover;}
 .profile-name{font-size:22px; font-weight:800;}
 .role-badge{display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; margin-left:8px; vertical-align:middle;}
-.role-badge.role-owner,.role-badge.role-howner{background:linear-gradient(120deg,var(--a),var(--b)); color:#fff;}
-.role-badge.role-moder,.role-badge.role-gmoder{background:var(--primary-soft); color:var(--primary);}
-.role-badge.role-helper,.role-badge.role-app{background:var(--surface2); color:var(--muted); border:1px solid var(--border);}
+/* Цвета ролей: хелпер/модератор — зелёные, отделы (app/gmoder) — жёлтые и второстепенные,
+   помощник генерала — синий, генерал — красный */
+.role-badge.role-helper,.role-badge.role-moder{background:rgba(52,199,89,.16); color:#4ade80; border:1px solid rgba(52,199,89,.38);}
+.role-badge.role-app,.role-badge.role-gmoder{background:rgba(234,179,8,.09); color:#cdb04a; border:1px solid rgba(234,179,8,.22); font-size:9.5px; font-weight:600; padding:2px 8px; opacity:.85;}
+.role-badge.role-howner{background:rgba(59,130,246,.18); color:#60a5fa; border:1px solid rgba(59,130,246,.42);}
+.role-badge.role-owner{background:rgba(239,68,68,.18); color:#f87171; border:1px solid rgba(239,68,68,.45);}
+html[data-theme="day"] .role-badge.role-helper,html[data-theme="day"] .role-badge.role-moder{color:#15803d;}
+html[data-theme="day"] .role-badge.role-app,html[data-theme="day"] .role-badge.role-gmoder{color:#8a6d0b;}
+html[data-theme="day"] .role-badge.role-howner{color:#1d4ed8;}
+html[data-theme="day"] .role-badge.role-owner{color:#b91c1c;}
+
+/* Авто-бейджи (не роли персонала — отдельная категория) */
+.user-badges{display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-top:10px;}
+.user-badge{font-size:11.5px; font-weight:600; padding:4px 11px; border-radius:999px; background:var(--primary-soft); color:var(--primary); border:1px solid color-mix(in srgb, var(--primary) 30%, transparent);}
 .profile-handle{font-size:13px; color:var(--muted); margin-top:2px;}
 .profile-bio{font-size:14px; color:var(--muted); line-height:1.6; margin-top:12px; max-width:480px; margin-left:auto; margin-right:auto;}
 .profile-loc{font-size:12.5px; color:var(--faint); margin-top:8px;}
@@ -81,6 +100,10 @@ img{max-width:100%; display:block;}
 </style>
 </head>
 <body>
+<div id="bgVideoLayer"></div>
+<div id="bgDim"></div>
+<canvas id="bgEffect"></canvas>
+<audio id="ownerAudio" loop></audio>
 <div class="wrap">
   <div class="topbar">
     <a class="brand" href="index.html">
@@ -111,6 +134,15 @@ try{
 }catch(e){}
 
 const ROLE_LABELS = { user:null, helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
+const BADGE_LABELS = { active:'⚡ Активный', author:'✍️ Автор' };
+const BG_PRESETS = { sakura:'bg/sakura.mp4', mountain_clouds:'bg/mountain_clouds.mp4', stars:'bg/stars.mp4', space:'bg/space.mp4', russia:'bg/russia.mp4' };
+const TRACK_PRESETS = {
+  t1:{name:'1,5', file:'music/1-5.mp3'},
+  t2:{name:"i can't do it anymore", file:'music/i-cant-do-it-anymore.mp3'},
+  t3:{name:'russia', file:'music/russia.mp3'},
+  t4:{name:'айсберг', file:'music/aisberg.mp3'}
+};
+const THEME_IDS = ['night','day','apple','warm','frost','violet','mono','sakura','emerald','russia'];
 const socialIcons = {twitter:'🐦', telegram:'✈️', discord:'🎮', tiktok:'🎵', github:'💻', site:'🔗', youtube:'▶️', soundcloud:'☁️'};
 
 function escapeHtml(str){
@@ -138,17 +170,118 @@ function appRowHTML(app){
   </div>`;
 }
 
+/* ===================== ВНЕШНИЙ ВИД ВЛАДЕЛЬЦА ПРОФИЛЯ ===================== */
+let fxAnim = null;
+function startBgEffect(type){
+  const canvas = document.getElementById('bgEffect');
+  const ctx = canvas.getContext('2d');
+  cancelAnimationFrame(fxAnim);
+  function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+  resize(); window.onresize = resize;
+  if(!type || type==='none'){ ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+  const particles = [];
+  const count = type==='stars'?140:type==='snow'?90:type==='rain'?110:60;
+  for(let i=0;i<count;i++){
+    particles.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2+0.5, v:Math.random()*1.4+0.4, o:Math.random()*0.6+0.2});
+  }
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(type==='grid'){
+      ctx.strokeStyle='rgba(150,150,255,0.15)'; ctx.lineWidth=1;
+      const g=40;
+      for(let x=0;x<canvas.width;x+=g){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+      for(let y=0;y<canvas.height;y+=g){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+    } else if(type==='aurora'){
+      const t=Date.now()/2000;
+      const grad = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+      grad.addColorStop(0,'rgba(139,124,255,0.10)'); grad.addColorStop(.5+Math.sin(t)*0.2,'rgba(34,195,238,0.10)'); grad.addColorStop(1,'rgba(178,92,240,0.10)');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,canvas.width,canvas.height);
+    } else {
+      particles.forEach(p=>{
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${p.o})`;
+        if(type==='rain'){ ctx.fillRect(p.x,p.y,1,10); p.y += p.v*6; }
+        else { ctx.arc(p.x,p.y,p.s,0,7); ctx.fill(); p.y += p.v; }
+        if(p.y>canvas.height){ p.y=-10; p.x=Math.random()*canvas.width; }
+      });
+    }
+    fxAnim = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function applyOwnerBackground(profile, c){
+  const layer = document.getElementById('bgVideoLayer');
+  layer.innerHTML = '';
+  let src = null, isImage = false;
+  if(profile.bg_url){ src = profile.bg_url; isImage = profile.bg_type === 'image'; }
+  else if(profile.bg_preset && BG_PRESETS[profile.bg_preset]){ src = BG_PRESETS[profile.bg_preset]; }
+  if(src){
+    if(isImage){
+      const img = document.createElement('img');
+      img.src = src; img.alt = '';
+      layer.appendChild(img);
+    } else {
+      const v = document.createElement('video');
+      v.src = src; v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true;
+      v.play().catch(()=>{});
+      layer.appendChild(v);
+    }
+  }
+  document.getElementById('bgDim').style.opacity = ((c.dim ?? 72) / 100);
+}
+
+/* Автовоспроизведение у гостя браузер блокирует, поэтому только кнопка ▶ */
+function setupOwnerPlayer(profile, c){
+  const holder = document.getElementById('trackPlayerHolder');
+  if(!holder) return;
+  let src = null, name = null;
+  if(profile.track_url){ src = profile.track_url; name = profile.track_name || 'Трек владельца'; }
+  else if(profile.track_preset && TRACK_PRESETS[profile.track_preset]){ src = TRACK_PRESETS[profile.track_preset].file; name = TRACK_PRESETS[profile.track_preset].name; }
+  if(!src){ holder.innerHTML = ''; return; }
+
+  const audio = document.getElementById('ownerAudio');
+  audio.src = src;
+  audio.volume = Math.min(1, Math.max(0, (c.volume ?? 44) / 100));
+  holder.innerHTML = `<div class="track-player card glass">
+      <button type="button" id="ownerPlayBtn" aria-label="Играть">▶</button>
+      <div class="tp-name">🎵 ${escapeHtml(name)}</div>
+      <input type="range" id="ownerVol" min="0" max="100" value="${c.volume ?? 44}" aria-label="Громкость">
+    </div>`;
+  const btn = document.getElementById('ownerPlayBtn');
+  btn.addEventListener('click', ()=>{
+    if(audio.paused){ audio.play().then(()=>{ btn.textContent='❚❚'; }).catch(()=>{ btn.textContent='▶'; }); }
+    else { audio.pause(); btn.textContent='▶'; }
+  });
+  document.getElementById('ownerVol').addEventListener('input', e=>{ audio.volume = e.target.value/100; });
+}
+
+function applyOwnerLook(profile){
+  const c = profile.customization || {};
+  if(profile.theme && THEME_IDS.includes(profile.theme)){
+    document.documentElement.setAttribute('data-theme', profile.theme);
+  }
+  applyOwnerBackground(profile, c);
+  startBgEffect(c.bgFx || 'none');
+  setupOwnerPlayer(profile, c);
+}
+
 async function renderProfile(userId){
   if(!sbClient){
     document.getElementById('content').innerHTML = '<div class="loading-state">Сервис недоступен, попробуйте позже.</div>';
     return;
   }
 
-  const { data: profile, error: profileError } = await sbClient
-    .from('public_profiles')
-    .select('id, display_name, handle, bio, location, avatar_url, links, stat_downloads, stat_suggestions, role')
-    .eq('id', userId)
-    .maybeSingle();
+  const BASE_FIELDS = 'id, display_name, handle, bio, location, avatar_url, links, stat_downloads, stat_suggestions, role';
+  const FULL_FIELDS = BASE_FIELDS + ', bg_url, bg_type, track_url, track_name, customization, theme, bg_preset, track_preset, badges';
+  let { data: profile, error: profileError } = await sbClient
+    .from('public_profiles').select(FULL_FIELDS).eq('id', userId).maybeSingle();
+  if(profileError){
+    // view ещё не обновлён миграцией — показываем хотя бы базовый профиль
+    console.warn('Полный select не прошёл, пробуем базовый:', profileError.message);
+    ({ data: profile, error: profileError } = await sbClient
+      .from('public_profiles').select(BASE_FIELDS).eq('id', userId).maybeSingle());
+  }
 
   if(profileError || !profile || !profile.display_name){
     renderNotFound();
@@ -170,6 +303,9 @@ async function renderProfile(userId){
     `<a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" title="${escapeHtml(l.type)}">${socialIcons[l.type]||'🔗'}</a>`
   ).join('');
 
+  const badgesHtml = (Array.isArray(profile.badges) ? profile.badges : [])
+    .filter(b=>BADGE_LABELS[b]).map(b=>`<span class="user-badge">${BADGE_LABELS[b]}</span>`).join('');
+
   const appsHtml = (apps && apps.length)
     ? apps.map(appRowHTML).join('')
     : '<div class="empty-state">Пока нет опубликованных приложений</div>';
@@ -181,7 +317,9 @@ async function renderProfile(userId){
       ${profile.handle ? `<div class="profile-handle">@${escapeHtml(profile.handle)}</div>` : ''}
       ${profile.bio ? `<div class="profile-bio">${escapeHtml(profile.bio)}</div>` : ''}
       ${profile.location ? `<div class="profile-loc">📍 ${escapeHtml(profile.location)}</div>` : ''}
+      ${badgesHtml ? `<div class="user-badges">${badgesHtml}</div>` : ''}
       ${linksHtml ? `<div class="profile-links">${linksHtml}</div>` : ''}
+      <div id="trackPlayerHolder"></div>
       <div class="profile-stats">
         <div class="profile-stat"><b>${profile.stat_downloads || 0}</b><span>скачиваний</span></div>
         <div class="profile-stat"><b>${profile.stat_suggestions || 0}</b><span>предложений</span></div>
@@ -191,6 +329,7 @@ async function renderProfile(userId){
     <div class="section-title">Приложения на DevHub</div>
     ${appsHtml}
   `;
+  applyOwnerLook(profile);
 }
 
 const params = new URLSearchParams(window.location.search);

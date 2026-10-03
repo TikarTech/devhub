@@ -73,16 +73,43 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .btn-sm{padding:6px 11px; font-size:12px; border-radius:9px;}
 .avatar-chip{display:flex; align-items:center; gap:7px; background:var(--surface2); border:1px solid var(--border); border-radius:999px; padding:5px 12px 5px 5px; font-size:13px; font-weight:600;}
 .role-badge{display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; margin-left:6px; vertical-align:middle; letter-spacing:.2px;}
-/* Цвета ролей: хелпер/модератор — зелёные, отделы (app/gmoder) — жёлтые и второстепенные,
-   помощник генерала — синий, генерал — красный */
-.role-badge.role-helper, .role-badge.role-moder{background:rgba(52,199,89,.16); color:#4ade80; border:1px solid rgba(52,199,89,.38);}
-.role-badge.role-app, .role-badge.role-gmoder{background:rgba(234,179,8,.09); color:#cdb04a; border:1px solid rgba(234,179,8,.22); font-size:9.5px; font-weight:600; padding:1px 7px; opacity:.85;}
-.role-badge.role-howner{background:rgba(59,130,246,.18); color:#60a5fa; border:1px solid rgba(59,130,246,.42);}
-.role-badge.role-owner{background:rgba(239,68,68,.18); color:#f87171; border:1px solid rgba(239,68,68,.45);}
-html[data-theme="day"] .role-badge.role-helper, html[data-theme="day"] .role-badge.role-moder{color:#15803d;}
-html[data-theme="day"] .role-badge.role-app, html[data-theme="day"] .role-badge.role-gmoder{color:#8a6d0b;}
-html[data-theme="day"] .role-badge.role-howner{color:#1d4ed8;}
-html[data-theme="day"] .role-badge.role-owner{color:#b91c1c;}
+/* ===== Роли: свои цвета, форма (слабо скруглённый квадрат), цвет ника и эффекты ===== */
+/* Цвет роли = цвет ника: --rc (основной) и --rc2 (светлее, для градиента) */
+.role-monkey,[data-role="monkey"]{--rc:#f472b6; --rc2:#fbcfe8;}
+.role-helper,[data-role="helper"]{--rc:#4ade80; --rc2:#bbf7d0;}
+.role-moder,[data-role="moder"]{--rc:#22c55e; --rc2:#86efac;}
+.role-app,[data-role="app"]{--rc:#d4b24a; --rc2:#f3e2a1;}
+.role-gmoder,[data-role="gmoder"]{--rc:#d4b24a; --rc2:#f3e2a1;}
+.role-howner,[data-role="howner"]{--rc:#60a5fa; --rc2:#bfdbfe;}
+.role-owner,[data-role="owner"]{--rc:#ef4444; --rc2:#fca5a5;}
+html[data-theme="day"] .role-monkey,html[data-theme="day"] [data-role="monkey"]{--rc:#db2777; --rc2:#f472b6;}
+html[data-theme="day"] .role-helper,html[data-theme="day"] [data-role="helper"]{--rc:#15803d; --rc2:#22c55e;}
+html[data-theme="day"] .role-moder,html[data-theme="day"] [data-role="moder"]{--rc:#166534; --rc2:#16a34a;}
+html[data-theme="day"] .role-app,html[data-theme="day"] [data-role="app"]{--rc:#a16207; --rc2:#ca8a04;}
+html[data-theme="day"] .role-gmoder,html[data-theme="day"] [data-role="gmoder"]{--rc:#a16207; --rc2:#ca8a04;}
+html[data-theme="day"] .role-howner,html[data-theme="day"] [data-role="howner"]{--rc:#1d4ed8; --rc2:#3b82f6;}
+html[data-theme="day"] .role-owner,html[data-theme="day"] [data-role="owner"]{--rc:#dc2626; --rc2:#ef4444;}
+html[data-theme="day"] .role-name{filter:none;}
+.role-badge{border-radius:5px; font-weight:700; color:var(--rc, var(--muted)); background:color-mix(in srgb, var(--rc, var(--muted)) 15%, transparent); border:1px solid color-mix(in srgb, var(--rc, var(--muted)) 42%, transparent);}
+.role-badge.role-app,.role-badge.role-gmoder{font-size:9.5px; font-weight:600; padding:1px 7px; opacity:.85;}
+.role-name{color:var(--rc, inherit);}
+.role-name.fx-glow{text-shadow:0 0 14px var(--rc, var(--primary)), 0 0 2px color-mix(in srgb, var(--rc, var(--primary)) 55%, transparent);}
+.role-name.fx-gradient{background:linear-gradient(120deg, var(--rc, var(--a)), var(--rc2, var(--b)), var(--rc, var(--a))); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; animation:nameShift 5s linear infinite;}
+.role-name.fx-shuffle{font-variant-numeric:tabular-nums;}
+@keyframes nameShift{to{background-position:200% 0;}}
+@media (prefers-reduced-motion:reduce){ .role-name.fx-gradient{animation:none;} }
+
+/* ---- форма «Управление ролями» ---- */
+.roles-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
+.role-opt{display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:9px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:12.5px; font-weight:700; text-align:left;}
+.role-opt .sw{width:12px; height:12px; border-radius:3px; background:var(--rc, var(--faint)); flex:none;}
+.role-opt.on{border-color:var(--rc, var(--primary)); background:color-mix(in srgb, var(--rc, var(--primary)) 14%, var(--surface2));}
+.role-opt[disabled]{opacity:.38; cursor:not-allowed;}
+.roles-user{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; cursor:pointer; border:1px solid transparent;}
+.roles-user:hover{background:var(--surface2);}
+.roles-user img,.roles-user .ur-ph{width:30px; height:30px; border-radius:50%; object-fit:cover; flex:none; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;}
+.roles-picked{padding:10px 12px; border-radius:12px; background:var(--primary-soft); margin:10px 0 14px; font-size:13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+#rolesResults{max-height:190px; overflow-y:auto; margin-top:6px;}
 
 /* ---- выпадающее меню аватарки ---- */
 .user-menu-wrap{position:relative;}
@@ -352,6 +379,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
           <button class="um-item" role="menuitem" id="umDonate">⭐ Поддержать проект</button>
           <div class="um-sep"></div>
           <div class="um-label">Настройки</div>
+          <button class="um-item" role="menuitem" id="umRoles" style="display:none;">🛡 Управление ролями</button>
           <button class="um-item" role="menuitem" id="umAppearance">🎨 Внешний вид</button>
           <button class="um-item danger" role="menuitem" id="umSignOut">🚪 Выйти из аккаунта</button>
         </div>
@@ -658,6 +686,20 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
   </div>
 </div>
 
+<div class="modal-backdrop" id="rolesBackdrop">
+  <div class="modal glass" style="max-width:520px;">
+    <button class="modal-close" data-close="rolesBackdrop">✕</button>
+    <h3>Управление ролями</h3>
+    <p class="sub">Найдите пользователя и выдайте роль. Применяется сразу на сайте; роли «Помощник генерала» и «Генерал» дают права и в боте.</p>
+    <div class="field"><label>Пользователь</label><input id="rolesSearch" placeholder="Имя, @handle или UUID" autocomplete="off"></div>
+    <div id="rolesResults"></div>
+    <div class="roles-picked" id="rolesPicked" style="display:none;"></div>
+    <div class="field"><label>Роль</label><div class="roles-grid" id="rolesGrid"></div></div>
+    <button class="btn btn-primary" id="rolesApply" style="width:100%; justify-content:center;" disabled>Выдать роль</button>
+    <div class="user-search-hint" id="rolesNote"></div>
+  </div>
+</div>
+
 <div class="toast glass" id="toast"></div>
 
 <script>
@@ -940,6 +982,8 @@ function renderUserMenu(){
   if(!head) return;
   const signOut = document.getElementById('umSignOut');
   if(signOut) signOut.style.display = currentUser ? '' : 'none';
+  const rolesItem = document.getElementById('umRoles');
+  if(rolesItem) rolesItem.style.display = canManageRoles() ? '' : 'none';
   if(currentUser){
     const name = escapeHtml(currentUser.name || 'Пользователь');
     const av = currentUser.avatarUrl
@@ -948,7 +992,8 @@ function renderUserMenu(){
     const roleLabel = ROLE_LABELS[state.profile.role];
     const badge = roleLabel ? `<span class="role-badge role-${state.profile.role}" style="margin-left:0; margin-top:3px;">${roleLabel}</span>` : '';
     head.style.display = '';
-    head.innerHTML = `${av}<div style="min-width:0;"><div class="um-name">${name}</div>${badge}</div>`;
+    head.innerHTML = `${av}<div style="min-width:0;"><div class="um-name"></div>${badge}</div>`;
+    applyNameFx(head.querySelector('.um-name'), state.profile.nameFx, state.profile.role, currentUser.name || 'Пользователь');
   } else {
     head.style.display = 'none';
   }
@@ -1093,7 +1138,8 @@ function updateAuthUI(){
       : `<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--primary-soft);align-items:center;justify-content:center;font-size:12px;">${currentUser.name[0].toUpperCase()}</span>`;
     const roleLabel = ROLE_LABELS[state.profile.role];
     const badgeHtml = roleLabel ? ` <span class="role-badge role-${state.profile.role} chip-name">${roleLabel}</span>` : '';
-    btn.innerHTML = `${avatarHtml}&nbsp;<span class="chip-name">${currentUser.name}</span>${badgeHtml}`;
+    btn.innerHTML = `${avatarHtml}&nbsp;<span class="chip-name nick"></span>${badgeHtml}`;
+    applyNameFx(btn.querySelector('.nick'), state.profile.nameFx, state.profile.role, currentUser.name);
     const hint = document.getElementById('scopeAccountHint');
     if(hint) hint.textContent = 'вход выполнен';
     if(signOutBtn) signOutBtn.style.display = 'inline-flex';
@@ -1345,7 +1391,7 @@ async function searchUsers(rawQuery){
     const av = u.avatar_url ? `<img src="${u.avatar_url}" alt="">` : `<span class="ur-ph">${name[0].toUpperCase()}</span>`;
     const roleLabel = ROLE_LABELS[u.role];
     const badge = roleLabel ? `<span class="role-badge role-${u.role}">${roleLabel}</span>` : '';
-    return `<a class="user-result" href="profile.html?id=${u.id}">${av}<div style="flex:1; min-width:0;"><div class="ur-name">${name}${badge}</div>${u.handle ? `<div class="ur-handle">@${escapeHtmlClient(u.handle)}</div>` : ''}</div></a>`;
+    return `<a class="user-result" href="profile.html?id=${u.id}">${av}<div style="flex:1; min-width:0;"><div class="ur-name">${roleLabel ? `<span class="role-name" data-role="${u.role}">${name}</span>` : name}${badge}</div>${u.handle ? `<div class="ur-handle">@${escapeHtmlClient(u.handle)}</div>` : ''}</div></a>`;
   }).join('');
 }
 
@@ -1393,7 +1439,44 @@ function escapeHtml(str){
   return String(str==null?'':str).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
 
-const ROLE_LABELS = { user:null, helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
+const ROLE_LABELS = { user:null, monkey:'Манки', helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
+/* ===================== НИК: цвет роли + эффекты профиля ===================== */
+const FX_CLASSES = ['fx-glow','fx-gradient','fx-shuffle'];
+function runShuffle(el, text){
+  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const chars = 'abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщэюя0123456789#$%&*';
+  const run = ()=>{
+    let frame = 0; const total = Math.max(10, text.length * 2);
+    clearInterval(el._fxTimer);
+    el._fxTimer = setInterval(()=>{
+      frame++;
+      const settled = Math.floor(frame / total * text.length);
+      el.textContent = text.split('').map((ch,i)=> (i < settled || ch === ' ') ? ch : chars[Math.floor(Math.random()*chars.length)]).join('');
+      if(frame >= total){ clearInterval(el._fxTimer); el.textContent = text; }
+    }, 45);
+  };
+  run();
+  const loop = ()=>{ if(!el.isConnected) return; run(); el._fxTimeout = setTimeout(loop, 7000); };
+  el._fxTimeout = setTimeout(loop, 7000);
+}
+/* Единая точка: цвет ника по роли + эффект из профиля (glow / gradient / shuffle).
+   Используется в шапке, меню аватарки, превью и на странице профиля. */
+function applyNameFx(el, fx, role, text){
+  if(!el) return;
+  text = String(text == null ? '' : text);
+  const sig = [fx||'none', role||'', text].join('|');
+  if(el._fxSig === sig && el.isConnected) return;
+  el._fxSig = sig;
+  clearInterval(el._fxTimer); clearTimeout(el._fxTimeout);
+  el.classList.add('role-name');
+  FX_CLASSES.forEach(c=>el.classList.remove(c));
+  if(role && ROLE_LABELS[role]) el.setAttribute('data-role', role); else el.removeAttribute('data-role');
+  el.textContent = text;
+  if(fx === 'glow') el.classList.add('fx-glow');
+  else if(fx === 'gradient') el.classList.add('fx-gradient');
+  else if(fx === 'shuffle'){ el.classList.add('fx-shuffle'); runShuffle(el, text); }
+}
+
 function renderRoleBadge(el, role){
   if(!el) return;
   const label = ROLE_LABELS[role];
@@ -1612,10 +1695,9 @@ function updatePreview(){
   if(state.profile.avatar) av.innerHTML = `<img src="${state.profile.avatar}">`;
   else av.innerHTML = `<span>${(state.profile.name||'A')[0].toUpperCase()}</span>`;
 
-  const nameEl = document.getElementById('previewName');
-  nameEl.style.cssText='';
-  if(state.profile.nameFx==='glow') nameEl.style.textShadow = '0 0 14px var(--primary)';
-  if(state.profile.nameFx==='gradient'){ nameEl.style.background='linear-gradient(120deg,var(--a),var(--b))'; nameEl.style.webkitBackgroundClip='text'; nameEl.style.backgroundClip='text'; nameEl.style.color='transparent'; }
+  applyNameFx(document.getElementById('previewName'), state.profile.nameFx, state.profile.role, state.profile.name || 'Ваше имя');
+  const hdrNick = document.querySelector('#openAuthBtn .nick');
+  if(hdrNick && currentUser) applyNameFx(hdrNick, state.profile.nameFx, state.profile.role, currentUser.name);
 
   document.getElementById('previewSocials').innerHTML = state.profile.links.filter(l=>l.url).map(l=>`<a href="${l.url}" target="_blank" rel="noopener" title="${l.type}">${socialIcons[l.type]||'🔗'}</a>`).join('') || '<span style="font-size:11px;color:var(--faint)">Ссылок пока нет</span>';
 
@@ -1701,6 +1783,99 @@ function startBgEffect(type){
   }
   draw();
 }
+
+/* ===================== УПРАВЛЕНИЕ РОЛЯМИ (форма для владельца и помощника) ===================== */
+const ROLE_ORDER = ['user','monkey','helper','moder','app','gmoder','howner','owner'];
+const ROLE_NAMES_FORM = Object.assign({}, ROLE_LABELS, { user:'Без роли' });
+let rolesPicked = null, rolesChosen = null, rolesSearchTimer = null;
+function canManageRoles(){ const r = state.profile && state.profile.role; return !!currentUser && (r === 'owner' || r === 'howner'); }
+function renderRolesGrid(){
+  const iAmOwner = state.profile.role === 'owner';
+  document.getElementById('rolesGrid').innerHTML = ROLE_ORDER.map(r=>{
+    const locked = !iAmOwner && (r === 'howner' || r === 'owner');
+    return `<button type="button" class="role-opt ${rolesChosen===r?'on':''}" data-role="${r}" data-pick="${r}" ${locked?'disabled title="Только Генерал"':''}><span class="sw"></span>${escapeHtmlClient(ROLE_NAMES_FORM[r])}</button>`;
+  }).join('');
+  document.querySelectorAll('#rolesGrid [data-pick]').forEach(b=>b.addEventListener('click', ()=>{
+    if(b.disabled) return;
+    rolesChosen = b.dataset.pick; renderRolesGrid(); updateRolesApply();
+  }));
+}
+function updateRolesApply(){
+  const btn = document.getElementById('rolesApply');
+  btn.disabled = !(rolesPicked && rolesChosen);
+}
+function renderRolesPicked(){
+  const box = document.getElementById('rolesPicked');
+  if(!rolesPicked){ box.style.display = 'none'; return; }
+  const label = ROLE_LABELS[rolesPicked.role];
+  box.style.display = 'flex';
+  box.innerHTML = `<span>Выбран:</span><b class="role-name" ${label ? `data-role="${rolesPicked.role}"` : ''}>${escapeHtmlClient(rolesPicked.display_name || 'Без имени')}</b>${label ? `<span class="role-badge role-${rolesPicked.role}">${label}</span>` : '<span style="color:var(--faint);">без роли</span>'}`;
+}
+async function searchRolesUsers(raw){
+  const box = document.getElementById('rolesResults');
+  if(!sbClient){ box.innerHTML = '<div class="user-search-hint">Сервис недоступен</div>'; return; }
+  const uuidRe = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  let query = sbClient.from('public_profiles').select('id, display_name, handle, avatar_url, role');
+  if(uuidRe.test(raw)) query = query.eq('id', raw);
+  else {
+    const q = raw.replace(/^@/, '').replace(/[%,()*\\]/g, ' ').trim();
+    if(q.length < 2){ box.innerHTML = ''; return; }
+    query = query.or(`display_name.ilike.%${q}%,handle.ilike.%${q}%`);
+  }
+  const { data, error } = await query.limit(8);
+  if(error){ box.innerHTML = '<div class="user-search-hint">Не удалось выполнить поиск</div>'; return; }
+  if(!data || !data.length){ box.innerHTML = '<div class="user-search-hint">Никого не нашли</div>'; return; }
+  box.innerHTML = data.map((u,i)=>{
+    const name = escapeHtmlClient(u.display_name || 'Без имени');
+    const av = u.avatar_url ? `<img src="${escapeHtmlClient(u.avatar_url)}" alt="">` : `<span class="ur-ph">${name[0].toUpperCase()}</span>`;
+    const label = ROLE_LABELS[u.role];
+    return `<div class="roles-user" data-i="${i}">${av}<div style="flex:1; min-width:0;"><span class="role-name" ${label?`data-role="${u.role}"`:''}>${name}</span>${u.handle ? ` <span style="color:var(--faint); font-size:12px;">@${escapeHtmlClient(u.handle)}</span>` : ''}</div>${label ? `<span class="role-badge role-${u.role}">${label}</span>` : ''}</div>`;
+  }).join('');
+  box.querySelectorAll('.roles-user').forEach(el=>el.addEventListener('click', ()=>{
+    rolesPicked = data[+el.dataset.i]; renderRolesPicked(); updateRolesApply();
+  }));
+}
+function openRolesModal(){
+  if(!canManageRoles()) return;
+  rolesPicked = null; rolesChosen = null;
+  document.getElementById('rolesSearch').value = '';
+  document.getElementById('rolesResults').innerHTML = '';
+  document.getElementById('rolesNote').textContent = '';
+  renderRolesPicked(); renderRolesGrid(); updateRolesApply();
+  openModal('rolesBackdrop');
+}
+document.getElementById('umRoles').addEventListener('click', ()=>{ closeUserMenu(); openRolesModal(); });
+document.getElementById('rolesSearch').addEventListener('input', e=>{
+  clearTimeout(rolesSearchTimer);
+  const v = e.target.value.trim();
+  if(!v){ document.getElementById('rolesResults').innerHTML = ''; return; }
+  rolesSearchTimer = setTimeout(()=>searchRolesUsers(v), 300);
+});
+document.getElementById('rolesApply').addEventListener('click', async ()=>{
+  const btn = document.getElementById('rolesApply');
+  const note = document.getElementById('rolesNote');
+  if(!rolesPicked || !rolesChosen) return;
+  btn.disabled = true; note.textContent = 'Применяем…';
+  try{
+    const { data } = await sbClient.auth.getSession();
+    const token = data?.session?.access_token;
+    if(!token) throw new Error('Войдите в аккаунт заново');
+    const res = await fetch(REPORT_ENDPOINT + '/admin/role', {
+      method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ access_token: token, target_id: rolesPicked.id, role: rolesChosen })
+    });
+    const out = await res.json().catch(()=>({}));
+    if(!res.ok || !out.ok) throw new Error(out.message || 'Не удалось выдать роль');
+    rolesPicked.role = rolesChosen;
+    renderRolesPicked();
+    note.textContent = out.message || 'Готово';
+    showToast(out.message || 'Роль выдана');
+  }catch(e){
+    note.textContent = '⚠️ ' + (e.message || e);
+  }finally{
+    updateRolesApply();
+  }
+});
 
 /* ===================== МОИ ПРИЛОЖЕНИЯ ===================== */
 let resubmitOfId = null;

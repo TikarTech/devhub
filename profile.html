@@ -64,16 +64,31 @@ img{max-width:100%; display:block;}
 .profile-avatar img{width:100%; height:100%; object-fit:cover;}
 .profile-name{font-size:22px; font-weight:800;}
 .role-badge{display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; margin-left:8px; vertical-align:middle;}
-/* Цвета ролей: хелпер/модератор — зелёные, отделы (app/gmoder) — жёлтые и второстепенные,
-   помощник генерала — синий, генерал — красный */
-.role-badge.role-helper,.role-badge.role-moder{background:rgba(52,199,89,.16); color:#4ade80; border:1px solid rgba(52,199,89,.38);}
-.role-badge.role-app,.role-badge.role-gmoder{background:rgba(234,179,8,.09); color:#cdb04a; border:1px solid rgba(234,179,8,.22); font-size:9.5px; font-weight:600; padding:2px 8px; opacity:.85;}
-.role-badge.role-howner{background:rgba(59,130,246,.18); color:#60a5fa; border:1px solid rgba(59,130,246,.42);}
-.role-badge.role-owner{background:rgba(239,68,68,.18); color:#f87171; border:1px solid rgba(239,68,68,.45);}
-html[data-theme="day"] .role-badge.role-helper,html[data-theme="day"] .role-badge.role-moder{color:#15803d;}
-html[data-theme="day"] .role-badge.role-app,html[data-theme="day"] .role-badge.role-gmoder{color:#8a6d0b;}
-html[data-theme="day"] .role-badge.role-howner{color:#1d4ed8;}
-html[data-theme="day"] .role-badge.role-owner{color:#b91c1c;}
+/* ===== Роли: свои цвета, форма (слабо скруглённый квадрат), цвет ника и эффекты ===== */
+/* Цвет роли = цвет ника: --rc (основной) и --rc2 (светлее, для градиента) */
+.role-monkey,[data-role="monkey"]{--rc:#f472b6; --rc2:#fbcfe8;}
+.role-helper,[data-role="helper"]{--rc:#4ade80; --rc2:#bbf7d0;}
+.role-moder,[data-role="moder"]{--rc:#22c55e; --rc2:#86efac;}
+.role-app,[data-role="app"]{--rc:#d4b24a; --rc2:#f3e2a1;}
+.role-gmoder,[data-role="gmoder"]{--rc:#d4b24a; --rc2:#f3e2a1;}
+.role-howner,[data-role="howner"]{--rc:#60a5fa; --rc2:#bfdbfe;}
+.role-owner,[data-role="owner"]{--rc:#ef4444; --rc2:#fca5a5;}
+html[data-theme="day"] .role-monkey,html[data-theme="day"] [data-role="monkey"]{--rc:#db2777; --rc2:#f472b6;}
+html[data-theme="day"] .role-helper,html[data-theme="day"] [data-role="helper"]{--rc:#15803d; --rc2:#22c55e;}
+html[data-theme="day"] .role-moder,html[data-theme="day"] [data-role="moder"]{--rc:#166534; --rc2:#16a34a;}
+html[data-theme="day"] .role-app,html[data-theme="day"] [data-role="app"]{--rc:#a16207; --rc2:#ca8a04;}
+html[data-theme="day"] .role-gmoder,html[data-theme="day"] [data-role="gmoder"]{--rc:#a16207; --rc2:#ca8a04;}
+html[data-theme="day"] .role-howner,html[data-theme="day"] [data-role="howner"]{--rc:#1d4ed8; --rc2:#3b82f6;}
+html[data-theme="day"] .role-owner,html[data-theme="day"] [data-role="owner"]{--rc:#dc2626; --rc2:#ef4444;}
+html[data-theme="day"] .role-name{filter:none;}
+.role-badge{border-radius:5px; font-weight:700; color:var(--rc, var(--muted)); background:color-mix(in srgb, var(--rc, var(--muted)) 15%, transparent); border:1px solid color-mix(in srgb, var(--rc, var(--muted)) 42%, transparent);}
+.role-badge.role-app,.role-badge.role-gmoder{font-size:9.5px; font-weight:600; padding:1px 7px; opacity:.85;}
+.role-name{color:var(--rc, inherit);}
+.role-name.fx-glow{text-shadow:0 0 14px var(--rc, var(--primary)), 0 0 2px color-mix(in srgb, var(--rc, var(--primary)) 55%, transparent);}
+.role-name.fx-gradient{background:linear-gradient(120deg, var(--rc, var(--a)), var(--rc2, var(--b)), var(--rc, var(--a))); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; animation:nameShift 5s linear infinite;}
+.role-name.fx-shuffle{font-variant-numeric:tabular-nums;}
+@keyframes nameShift{to{background-position:200% 0;}}
+@media (prefers-reduced-motion:reduce){ .role-name.fx-gradient{animation:none;} }
 
 /* Авто-бейджи (не роли персонала — отдельная категория) */
 .user-badges{display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-top:10px;}
@@ -133,7 +148,44 @@ try{
   if(savedSettings?.theme) document.documentElement.setAttribute('data-theme', savedSettings.theme);
 }catch(e){}
 
-const ROLE_LABELS = { user:null, helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
+const ROLE_LABELS = { user:null, monkey:'Манки', helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
+/* ===================== НИК: цвет роли + эффекты профиля ===================== */
+const FX_CLASSES = ['fx-glow','fx-gradient','fx-shuffle'];
+function runShuffle(el, text){
+  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const chars = 'abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщэюя0123456789#$%&*';
+  const run = ()=>{
+    let frame = 0; const total = Math.max(10, text.length * 2);
+    clearInterval(el._fxTimer);
+    el._fxTimer = setInterval(()=>{
+      frame++;
+      const settled = Math.floor(frame / total * text.length);
+      el.textContent = text.split('').map((ch,i)=> (i < settled || ch === ' ') ? ch : chars[Math.floor(Math.random()*chars.length)]).join('');
+      if(frame >= total){ clearInterval(el._fxTimer); el.textContent = text; }
+    }, 45);
+  };
+  run();
+  const loop = ()=>{ if(!el.isConnected) return; run(); el._fxTimeout = setTimeout(loop, 7000); };
+  el._fxTimeout = setTimeout(loop, 7000);
+}
+/* Единая точка: цвет ника по роли + эффект из профиля (glow / gradient / shuffle).
+   Используется в шапке, меню аватарки, превью и на странице профиля. */
+function applyNameFx(el, fx, role, text){
+  if(!el) return;
+  text = String(text == null ? '' : text);
+  const sig = [fx||'none', role||'', text].join('|');
+  if(el._fxSig === sig && el.isConnected) return;
+  el._fxSig = sig;
+  clearInterval(el._fxTimer); clearTimeout(el._fxTimeout);
+  el.classList.add('role-name');
+  FX_CLASSES.forEach(c=>el.classList.remove(c));
+  if(role && ROLE_LABELS[role]) el.setAttribute('data-role', role); else el.removeAttribute('data-role');
+  el.textContent = text;
+  if(fx === 'glow') el.classList.add('fx-glow');
+  else if(fx === 'gradient') el.classList.add('fx-gradient');
+  else if(fx === 'shuffle'){ el.classList.add('fx-shuffle'); runShuffle(el, text); }
+}
+
 const BADGE_LABELS = { active:'⚡ Активный', author:'✍️ Автор', supporter:'⭐ Поддержал' };
 const BG_PRESETS = { sakura:'bg/sakura.mp4', mountain_clouds:'bg/mountain_clouds.mp4', stars:'bg/stars.mp4', space:'bg/space.mp4', russia:'bg/russia.mp4' };
 const TRACK_PRESETS = {
@@ -258,6 +310,13 @@ function setupOwnerPlayer(profile, c){
 
 function applyOwnerLook(profile){
   const c = profile.customization || {};
+  // ник: цвет роли + эффект, выбранный владельцем в редакторе профиля
+  applyNameFx(document.getElementById('profNick'), c.nameFx, profile.role, profile.display_name);
+  const av = document.querySelector('.profile-avatar');
+  if(av){
+    av.style.borderRadius = ({circle:'50%', rounded:'20px', square:'6px'})[c.avatarShape] || '50%';
+    av.style.boxShadow = c.ring ? '0 0 0 3px var(--primary)' : 'none';
+  }
   if(profile.theme && THEME_IDS.includes(profile.theme)){
     document.documentElement.setAttribute('data-theme', profile.theme);
   }
@@ -313,7 +372,7 @@ async function renderProfile(userId){
   document.getElementById('content').innerHTML = `
     <div class="profile-hero card glass">
       <div class="profile-avatar">${avatarHtml}</div>
-      <div class="profile-name">${escapeHtml(profile.display_name)}${ROLE_LABELS[profile.role] ? `<span class="role-badge role-${profile.role}">${ROLE_LABELS[profile.role]}</span>` : ''}</div>
+      <div class="profile-name"><span id="profNick"></span>${ROLE_LABELS[profile.role] ? `<span class="role-badge role-${profile.role}">${ROLE_LABELS[profile.role]}</span>` : ''}</div>
       ${profile.handle ? `<div class="profile-handle">@${escapeHtml(profile.handle)}</div>` : ''}
       ${profile.bio ? `<div class="profile-bio">${escapeHtml(profile.bio)}</div>` : ''}
       ${profile.location ? `<div class="profile-loc">📍 ${escapeHtml(profile.location)}</div>` : ''}

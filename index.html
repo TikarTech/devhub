@@ -90,7 +90,7 @@ html[data-theme="day"] .role-gmoder,html[data-theme="day"] [data-role="gmoder"]{
 html[data-theme="day"] .role-howner,html[data-theme="day"] [data-role="howner"]{--rc:#1d4ed8; --rc2:#3b82f6;}
 html[data-theme="day"] .role-owner,html[data-theme="day"] [data-role="owner"]{--rc:#dc2626; --rc2:#ef4444;}
 html[data-theme="day"] .role-name{filter:none;}
-.role-badge{border-radius:5px; font-weight:700; color:var(--rc, var(--muted)); background:color-mix(in srgb, var(--rc, var(--muted)) 15%, transparent); border:1px solid color-mix(in srgb, var(--rc, var(--muted)) 42%, transparent);}
+.role-badge{border-radius:5px; font-weight:700; color:var(--rc, var(--muted)); background:color-mix(in srgb, var(--rc, var(--muted)) var(--rb, 15%), transparent); border:1px solid color-mix(in srgb, var(--rc, var(--muted)) 42%, transparent);}
 .role-badge.role-app,.role-badge.role-gmoder{font-size:9.5px; font-weight:600; padding:1px 7px; opacity:.85;}
 .role-name{color:var(--rc, inherit);}
 .role-name.fx-glow{text-shadow:0 0 14px var(--rc, var(--primary)), 0 0 2px color-mix(in srgb, var(--rc, var(--primary)) 55%, transparent);}
@@ -106,6 +106,28 @@ html[data-theme="day"] .role-name{filter:none;}
 .preview-namerow{display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px 10px;}
 .preview-namerow.col{flex-direction:column; gap:6px;}
 .roles-sub{font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--faint); margin:12px 0 6px;}
+/* ---- VIP: рамка, корона, настройки ---- */
+.vip-frame{position:relative;}
+.vip-frame::before{content:""; position:absolute; inset:0; padding:2px; border-radius:inherit; background:linear-gradient(135deg, var(--v1), var(--v2)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; z-index:2;}
+.avatar-wrap{position:relative; width:max-content; margin:0 auto;}
+.avatar-wrap.has-crown{margin-top:30px;}
+.vip-crown{position:absolute; left:50%; top:0; transform:translate(-50%,-74%); width:46px; height:46px; pointer-events:none; z-index:3; display:flex; align-items:center; justify-content:center; filter:drop-shadow(0 2px 6px rgba(0,0,0,.55));}
+.vip-crown img{width:100%; height:100%; object-fit:contain;}
+.vip-crown .emoji{font-size:32px; line-height:1;}
+.vip-perks{display:grid; gap:6px; font-size:13px; color:var(--muted); margin:10px 0 16px; padding:12px 14px; border-radius:12px; background:var(--primary-soft);}
+.vip-colors{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.vip-colors input[type=color]{width:48px; height:36px; border:1px solid var(--border); border-radius:8px; background:var(--surface2); padding:2px; cursor:pointer;}
+.vip-sample{font-weight:800; font-size:18px; margin-left:6px;}
+.vip-presets{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+.vip-preset{width:44px; height:28px; border-radius:8px; border:2px solid var(--border);}
+.vip-preset:hover{border-color:var(--text);}
+#vipControls.locked{opacity:.4; pointer-events:none;}
+/* ---- иконка приложения в заявке ---- */
+.icon-pick{display:flex; gap:12px; align-items:center;}
+.icon-prev{width:58px; height:58px; border-radius:14px; background:var(--primary-soft); display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:26px; flex:none;}
+.icon-prev img{width:100%; height:100%; object-fit:cover;}
+.tool-icon{overflow:hidden;}
+.tool-icon img{width:100%; height:100%; object-fit:cover;}
 /* ---- форма «Управление ролями» ---- */
 .roles-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
 .role-opt{display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:9px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:12.5px; font-weight:700; text-align:left;}
@@ -454,6 +476,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
             <button data-pane="links">Ссылки</button>
             <button data-pane="stats">Статистика</button>
             <button data-pane="myapps">Мои приложения</button>
+            <button data-pane="vip">💎 VIP</button>
           </div>
           <div class="editor-panel">
 
@@ -491,10 +514,16 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
                 </div></div>
               <div class="field"><label>Отображение ролей</label>
                 <div class="shape-seg" id="rolesLayoutSeg">
-                  <button class="on" data-layout="row">Горизонтально</button>
-                  <button data-layout="column">Вертикально</button>
+                  <button data-layout="row">Горизонтально</button>
+                  <button class="on" data-layout="column">Вертикально</button>
                 </div>
                 <div class="user-search-hint">Горизонтально — рядом с ником. Вертикально — столбиком под ником. Видно в вашем профиле.</div></div>
+              <div class="field" id="primaryRoleField"><label>Основная роль</label>
+                <div class="shape-seg" id="primaryRoleSeg"></div>
+                <div class="user-search-hint" id="primaryRoleHint"></div></div>
+              <div class="field"><label>Прозрачность фона роли: <span id="roleBgVal">15</span>%</label>
+                <input type="range" id="roleBgRange" min="0" max="100" value="15">
+                <div class="user-search-hint">0% — только текст и рамка, 100% — сплошная плашка.</div></div>
               <div class="toggle-row"><div><div class="t">Кольцо вокруг аватара</div><div class="d">В цвет акцента темы</div></div>
                 <label class="switch"><input type="checkbox" id="tRing"><span class="track"></span><span class="knob"></span></label></div>
             </div>
@@ -547,8 +576,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
               </div>
               <div class="toggle-row" style="margin-top:10px;"><div><div class="t">Tilt</div><div class="d">Карточка слегка наклоняется за курсором</div></div>
                 <label class="switch"><input type="checkbox" id="tTilt"><span class="track"></span><span class="knob"></span></label></div>
-              <div class="toggle-row"><div><div class="t">Значок «Premium»</div><div class="d">Корона над именем</div></div>
-                <label class="switch"><input type="checkbox" id="tCrown"><span class="track"></span><span class="knob"></span></label></div>
+              
             </div>
 
             <div class="editor-pane" id="pane-links">
@@ -563,6 +591,33 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
               <div class="pane-sub">Опубликованные вами приложения и ваши заявки на добавление: статус, причина отказа, повторная отправка.</div>
               <div id="myAppsList"><div class="empty-state">Откройте вкладку, чтобы загрузить список</div></div>
               <button class="btn btn-ghost btn-sm" id="myAppsRefresh" style="margin-top:10px;">↻ Обновить</button>
+            </div>
+
+            <div class="editor-pane" id="pane-vip">
+              <div class="pane-title">💎 VIP</div>
+              <div class="pane-sub" id="vipStatus"></div>
+              <div class="vip-perks">
+                <div>🎨 Градиент из двух любых цветов — цвет вашего ника</div>
+                <div>🖼 Та же градиентная рамка вокруг карточки профиля</div>
+                <div>👑 Корона над аватаркой</div>
+                <div>💎 Значок VIP в профиле</div>
+                <div>⚡ Ваши заявки модераторы видят в очереди первыми</div>
+              </div>
+              <div id="vipControls">
+                <div class="field"><label>Градиент ника и рамки</label>
+                  <div class="vip-colors">
+                    <input type="color" id="vipC1" value="#8b7cff"><span>→</span><input type="color" id="vipC2" value="#ff7cc8">
+                    <span class="vip-sample role-name" id="vipSample">Ваш ник</span>
+                  </div>
+                  <div class="vip-presets" id="vipPresets"></div></div>
+                <div class="toggle-row"><div><div class="t">Градиент ника</div><div class="d">Вместо цвета роли</div></div>
+                  <label class="switch"><input type="checkbox" id="tVipNick"><span class="track"></span><span class="knob"></span></label></div>
+                <div class="toggle-row"><div><div class="t">Градиентная рамка профиля</div><div class="d">Вокруг карточки профиля</div></div>
+                  <label class="switch"><input type="checkbox" id="tVipFrame"><span class="track"></span><span class="knob"></span></label></div>
+                <div class="toggle-row"><div><div class="t">Корона над аватаркой</div><div class="d">Только для VIP</div></div>
+                  <label class="switch"><input type="checkbox" id="tCrown"><span class="track"></span><span class="knob"></span></label></div>
+              </div>
+              <div class="user-search-hint" id="vipHow" style="margin-top:12px;"></div>
             </div>
 
             <div class="editor-pane" id="pane-stats">
@@ -583,7 +638,7 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
 
         <div class="preview-wrap">
           <div class="preview-card glass" id="previewCard">
-            <div class="preview-avatar circle" id="previewAvatar"><span id="previewAvatarLetter">A</span></div>
+            <div class="avatar-wrap" id="previewAvatarWrap"><div class="vip-crown" id="previewCrown" style="display:none;"></div><div class="preview-avatar circle" id="previewAvatar"><span id="previewAvatarLetter">A</span></div></div>
             <div class="preview-namerow" id="previewNameRow">
               <div class="preview-name" id="previewName">Ваше имя</div>
               <div class="role-stack roles-row" id="previewRoles" style="display:none;"></div>
@@ -628,6 +683,17 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
         <div class="field" id="reqNameWrap"><label>Название приложения</label><input id="reqName" placeholder="Например, Acode"></div>
         <div class="field" id="reqLinkWrap"><label>Ссылка (офиц. сайт / файл)</label><input id="reqLink" placeholder="https://…"></div>
         <div class="field" id="reqGithubWrap"><label>Исходный код (GitHub)</label><input id="reqGithub" placeholder="https://github.com/user/repo — или «-», если исходников нет"></div>
+        <div class="field" id="reqIconWrap"><label>Иконка приложения (необязательно)</label>
+          <div class="icon-pick">
+            <div class="icon-prev" id="reqIconPrev">📦</div>
+            <div style="flex:1; min-width:0;">
+              <button type="button" class="btn btn-ghost btn-sm" id="reqIconBtn">Выбрать картинку</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="reqIconClear" style="display:none;">Убрать</button>
+              <div class="user-search-hint">PNG, JPG или WebP — обрежется до квадрата. Если заявку одобрят, она станет иконкой приложения; при отказе файл удалится. Нужен вход в аккаунт.</div>
+            </div>
+          </div>
+          <input type="file" id="reqIconInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
+        </div>
         <div class="field" id="reqCommentWrap"><label>Комментарий</label><textarea id="reqComment" placeholder="Опишите причину…"></textarea></div>
         <div class="field" id="reqWhatWrongWrap" style="display:none;"><label>Что неправильно?</label><textarea id="reqWhatWrong" placeholder="Например: указана неверная версия Android"></textarea></div>
         <div class="field" id="reqExpectedWrap" style="display:none;"><label>Как должно быть?</label><textarea id="reqExpected" placeholder="Правильная информация или предложение по исправлению"></textarea></div>
@@ -712,7 +778,15 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
     <div class="roles-sub">Роль</div>
     <div class="roles-grid" id="rolesGrid"></div>
     <div class="roles-sub">Отделы (можно несколько, не заменяют роль)</div>
-    <div class="roles-grid" id="deptsGrid" style="margin-bottom:14px;"></div>
+    <div class="roles-grid" id="deptsGrid" style="margin-bottom:6px;"></div>
+    <div class="roles-sub">💎 VIP</div>
+    <select id="rolesVip" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); margin-bottom:14px;">
+      <option value="keep">Не менять</option>
+      <option value="30">+30 дней</option>
+      <option value="90">+90 дней</option>
+      <option value="forever">Навсегда</option>
+      <option value="remove">Снять VIP</option>
+    </select>
     <button class="btn btn-primary" id="rolesApply" style="width:100%; justify-content:center;" disabled>Выдать роль</button>
     <div class="user-search-hint" id="rolesNote"></div>
   </div>
@@ -754,11 +828,10 @@ const ALL_ARCHS = ['arm64-v8a','armeabi-v7a','x86_64','x86'];
 
 async function loadCatalogFromSupabase(){
   if(!sbClient){ console.warn('sbClient не инициализирован — каталог не загружен'); return; }
-  const { data, error } = await sbClient
-    .from('apps')
-    .select('id, name, author, description, category, icon, rating, github_url, apk_url, status, added_by, app_versions(version, architectures, created_at)')
-    .eq('status', 'approved')
-    .order('created_at', { ascending: true });
+  const APP_COLS = 'id, name, author, description, category, icon, rating, github_url, apk_url, status, added_by, app_versions(version, architectures, created_at)';
+  const fetchApps = cols => sbClient.from('apps').select(cols).eq('status', 'approved').order('created_at', { ascending: true });
+  let { data, error } = await fetchApps(APP_COLS.replace('icon, ', 'icon, icon_url, '));
+  if(error && /icon_url/i.test(error.message || '')) ({ data, error } = await fetchApps(APP_COLS)); // миграция 6 ещё не применена
 
   if(error){
     console.error('Ошибка загрузки каталога из Supabase:', error);
@@ -775,6 +848,7 @@ async function loadCatalogFromSupabase(){
     return {
       id: row.id,
       icon: row.icon || '📦',
+      iconUrl: row.icon_url || null,
       name: row.name,
       author: row.author || '—',
       addedBy: row.added_by || null,
@@ -824,7 +898,7 @@ const themes = [
 let state = {
   theme:'night', lang:'ru', tz:'Europe/Moscow',
   profile:{name:'', handle:'', bio:'', loc:'', avatar:null, opacity:58, blur:22, radius:26, avatarShape:'circle', ring:false,
-    bg:'none', bgCustom:null, bgType:null, dim:72, bgFx:'none', track:'none', trackCustom:null, trackName:null, autoplay:false, volume:44, role:'user', depts:[], rolesLayout:'row',
+    bg:'none', bgCustom:null, bgType:null, dim:72, bgFx:'none', track:'none', trackCustom:null, trackName:null, autoplay:false, volume:44, role:'user', depts:[], rolesLayout:'column', primaryRole:null, roleBgOpacity:15, vipUntil:null, vipC1:'#8B7CFF', vipC2:'#FF7CC8', vipNick:true, vipFrame:true,
     nameFx:'none', tilt:false, crown:false, links:[], statDownloads:0, statSuggestions:0},
 };
 let currentUser = null;
@@ -854,7 +928,7 @@ function androidCardHTML(app){
   const archsForV = app.versions[versionKeys[0]];
   return `<div class="android-card card glass" data-app="${app.id}">
     <div class="android-row">
-      <div class="tool-icon">${app.icon}</div>
+      <div class="tool-icon">${app.iconUrl ? `<img src="${escapeHtmlClient(app.iconUrl)}" alt="" loading="lazy">` : app.icon}</div>
       <div class="android-meta">
         <div style="display:flex; align-items:center; gap:8px;"><div class="tool-name">${app.name}</div><div class="tool-rating">★ ${app.rating}</div></div>
         <div class="tool-author">${app.addedBy ? `<a href="profile.html?id=${app.addedBy}" style="color:inherit; text-decoration:none; border-bottom:1px dashed var(--faint);">${app.author}</a>` : app.author}</div>
@@ -1007,11 +1081,11 @@ function renderUserMenu(){
     const av = currentUser.avatarUrl
       ? `<img src="${currentUser.avatarUrl}" alt="">`
       : `<span class="um-ph">${name[0] ? name[0].toUpperCase() : '?'}</span>`;
-    const menuBadges = roleBadgesHtml(state.profile.role, state.profile.depts);
-    const badge = menuBadges ? `<div class="role-stack roles-col" style="align-items:flex-start; margin-top:3px;">${menuBadges}</div>` : '';
+    const menuBadges = roleBadgesHtml(state.profile.role, state.profile.depts, state.profile.primaryRole);
+    const badge = menuBadges ? `<div class="role-stack roles-col" style="align-items:flex-start; margin-top:3px; --rb:${Number.isFinite(state.profile.roleBgOpacity) ? state.profile.roleBgOpacity : 15}%;">${menuBadges}</div>` : '';
     head.style.display = '';
     head.innerHTML = `${av}<div style="min-width:0;"><div class="um-name"></div>${badge}</div>`;
-    applyNameFx(head.querySelector('.um-name'), state.profile.nameFx, nickRole(state.profile.role, state.profile.depts), currentUser.name || 'Пользователь');
+    applyNameFx(head.querySelector('.um-name'), state.profile.nameFx, nickRole(state.profile.role, state.profile.depts, state.profile.primaryRole), currentUser.name || 'Пользователь', vipGradient(myVip(), state.profile));
   } else {
     head.style.display = 'none';
   }
@@ -1154,10 +1228,12 @@ function updateAuthUI(){
     const avatarHtml = currentUser.avatarUrl
       ? `<img src="${currentUser.avatarUrl}" alt="">`
       : `<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--primary-soft);align-items:center;justify-content:center;font-size:12px;">${currentUser.name[0].toUpperCase()}</span>`;
-    const hdrBadges = roleBadgesHtml(state.profile.role, state.profile.depts);
-    const badgeHtml = hdrBadges ? ` <span class="role-stack roles-row chip-name" style="margin-left:4px;">${hdrBadges}</span>` : '';
+    // в шапке — только основная роль (остальные видны в профиле и меню)
+    const hdrRoles = allRoles(state.profile.role, state.profile.depts, state.profile.primaryRole);
+    const hdrBadges = hdrRoles.length ? `<span class="role-badge role-${hdrRoles[0]}">${ROLE_LABELS[hdrRoles[0]]}</span>` : '';
+    const badgeHtml = hdrBadges ? ` <span class="role-stack roles-row chip-name" style="margin-left:4px; --rb:${Number.isFinite(state.profile.roleBgOpacity) ? state.profile.roleBgOpacity : 15}%;">${hdrBadges}</span>` : '';
     btn.innerHTML = `${avatarHtml}&nbsp;<span class="chip-name nick"></span>${badgeHtml}`;
-    applyNameFx(btn.querySelector('.nick'), state.profile.nameFx, nickRole(state.profile.role, state.profile.depts), currentUser.name);
+    applyNameFx(btn.querySelector('.nick'), state.profile.nameFx, nickRole(state.profile.role, state.profile.depts, state.profile.primaryRole), currentUser.name, vipGradient(myVip(), state.profile));
     const hint = document.getElementById('scopeAccountHint');
     if(hint) hint.textContent = 'вход выполнен';
     if(signOutBtn) signOutBtn.style.display = 'inline-flex';
@@ -1227,6 +1303,7 @@ async function loadProfileFromSupabase(userId){
     avatar: data.avatar_url || null,
     role: data.role || 'user',
     depts: Array.isArray(data.depts) ? data.depts : [],
+    vipUntil: data.vip_until || null,
     bg: data.bg_url ? 'custom' : (data.bg_preset || state.profile.bg),
     bgCustom: data.bg_url || null,
     bgType: data.bg_type || null,
@@ -1243,7 +1320,11 @@ async function loadProfileFromSupabase(userId){
     ring: c.ring ?? state.profile.ring,
     tilt: c.tilt ?? state.profile.tilt,
     crown: c.crown ?? state.profile.crown,
-    rolesLayout: c.rolesLayout || state.profile.rolesLayout || 'row',
+    rolesLayout: c.rolesLayout || state.profile.rolesLayout || 'column',
+    primaryRole: c.primaryRole || null,
+    roleBgOpacity: Number.isFinite(c.roleBgOpacity) ? c.roleBgOpacity : state.profile.roleBgOpacity,
+    vipC1: c.vipC1 || state.profile.vipC1, vipC2: c.vipC2 || state.profile.vipC2,
+    vipNick: c.vipNick ?? state.profile.vipNick, vipFrame: c.vipFrame ?? state.profile.vipFrame,
     nameFx: c.nameFx || state.profile.nameFx,
     bgFx: c.bgFx || state.profile.bgFx,
     dim: c.dim ?? state.profile.dim,
@@ -1284,7 +1365,7 @@ async function saveProfileToSupabase(){
     stat_suggestions: p.statSuggestions || 0,
     customization: {
       opacity: p.opacity, blur: p.blur, radius: p.radius, avatarShape: p.avatarShape,
-      ring: p.ring, tilt: p.tilt, crown: p.crown, nameFx: p.nameFx, bgFx: p.bgFx, rolesLayout: p.rolesLayout || 'row',
+      ring: p.ring, tilt: p.tilt, crown: p.crown, nameFx: p.nameFx, bgFx: p.bgFx, rolesLayout: p.rolesLayout || 'column', primaryRole: p.primaryRole || null, roleBgOpacity: p.roleBgOpacity, vipC1: p.vipC1, vipC2: p.vipC2, vipNick: p.vipNick, vipFrame: p.vipFrame,
       dim: p.dim, volume: p.volume, autoplay: p.autoplay
     }
   };
@@ -1314,7 +1395,10 @@ function syncAppearanceControls(){
   const setCheck = (id,v)=>{ const el=document.getElementById(id); if(el) el.checked = !!v; };
   setCheck('tAutoplay', p.autoplay); setCheck('tRing', p.ring); setCheck('tTilt', p.tilt); setCheck('tCrown', p.crown);
   document.querySelectorAll('#avatarShape button').forEach(b=>b.classList.toggle('on', b.dataset.shape===p.avatarShape));
-  document.querySelectorAll('#rolesLayoutSeg button').forEach(b=>b.classList.toggle('on', b.dataset.layout===(p.rolesLayout||'row')));
+  document.querySelectorAll('#rolesLayoutSeg button').forEach(b=>b.classList.toggle('on', b.dataset.layout===(p.rolesLayout||'column')));
+  const rbEl = document.getElementById('roleBgRange');
+  if(rbEl){ rbEl.value = Number.isFinite(p.roleBgOpacity) ? p.roleBgOpacity : 15; document.getElementById('roleBgVal').textContent = rbEl.value; }
+  renderVipPane();
   document.querySelectorAll('#effectGrid .effect-opt').forEach(x=>x.classList.toggle('selected', x.dataset.fx===(p.bgFx||'none')));
   document.querySelectorAll('#nameEffectGrid .effect-opt').forEach(x=>x.classList.toggle('selected', x.dataset.nfx===(p.nameFx||'none')));
   document.getElementById('bgDim').style.opacity = (p.dim ?? 72)/100;
@@ -1421,6 +1505,7 @@ document.querySelectorAll('#editorTabs button').forEach(b=>{
     document.querySelectorAll('.editor-pane').forEach(p=>p.classList.remove('on'));
     document.getElementById('pane-'+b.dataset.pane).classList.add('on');
     if(b.dataset.pane === 'myapps') loadMyApps();
+    if(b.dataset.pane === 'vip') renderVipPane();
   });
 });
 
@@ -1461,31 +1546,63 @@ function escapeHtml(str){
 const ROLE_LABELS = { user:null, monkey:'Манки', helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
 /* ===================== НЕСКОЛЬКО РОЛЕЙ: основная + отделы ===================== */
 const ROLE_RANK_CLIENT = { user:0, monkey:1, helper:1, app:2, gmoder:2, moder:3, howner:4, owner:5 };
-/* Все роли человека: основная (если есть) + отделы, без дублей */
-function allRoles(role, depts){
+/* Все роли человека. primary — выбранная пользователем «основная»: идёт первой и красит ник */
+function allRoles(role, depts, primary){
   const out = [];
   if(role && ROLE_LABELS[role]) out.push(role);
   (Array.isArray(depts) ? depts : []).forEach(d=>{ if(ROLE_LABELS[d] && !out.includes(d)) out.push(d); });
+  if(primary && out.includes(primary)) return [primary, ...out.filter(r=>r!==primary)];
   return out;
 }
-/* Роль, чей цвет получает ник — самая старшая из всех */
-function nickRole(role, depts){
-  return allRoles(role, depts).slice().sort((a,b)=>(ROLE_RANK_CLIENT[b]||0)-(ROLE_RANK_CLIENT[a]||0))[0] || null;
+function nickRole(role, depts, primary){
+  const l = allRoles(role, depts);
+  if(primary && l.includes(primary)) return primary;
+  return l.slice().sort((a,b)=>(ROLE_RANK_CLIENT[b]||0)-(ROLE_RANK_CLIENT[a]||0))[0] || null;
 }
-function roleBadgesHtml(role, depts){
-  return allRoles(role, depts).map(r=>`<span class="role-badge role-${r}">${ROLE_LABELS[r]}</span>`).join('');
+function roleBadgesHtml(role, depts, primary){
+  return allRoles(role, depts, primary).map(r=>`<span class="role-badge role-${r}">${ROLE_LABELS[r]}</span>`).join('');
 }
-function renderRoleStack(el, role, depts, layout){
+/* layout: 'column' (по умолчанию, столбиком) или 'row' (рядом с ником); bgPct — прозрачность фона роли, 0–100 */
+function renderRoleStack(el, role, depts, layout, primary, bgPct){
   if(!el) return;
-  const html = roleBadgesHtml(role, depts);
+  const html = roleBadgesHtml(role, depts, primary);
   el.innerHTML = html;
   el.style.display = html ? '' : 'none';
-  el.className = 'role-stack ' + (layout === 'column' ? 'roles-col' : 'roles-row');
+  el.className = 'role-stack ' + (layout === 'row' ? 'roles-row' : 'roles-col');
+  el.style.setProperty('--rb', (Number.isFinite(bgPct) ? bgPct : 15) + '%');
 }
 async function queryPublicProfiles(fields, apply){
-  let r = await apply(sbClient.from('public_profiles').select(fields + ', depts'));
-  if(r.error && /depts/i.test(r.error.message || '')) r = await apply(sbClient.from('public_profiles').select(fields));
+  const tries = [fields + ', depts, vip', fields + ', depts', fields];
+  let r;
+  for(const f of tries){
+    r = await apply(sbClient.from('public_profiles').select(f));
+    if(!r.error || !/depts|vip/i.test(r.error.message || '')) return r;
+  }
   return r;
+}
+
+/* ===================== VIP: градиент ника и рамки, корона ===================== */
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+function isVipUntil(iso){ return !!iso && new Date(iso).getTime() > Date.now(); }
+function myVip(){ return isVipUntil(state.profile.vipUntil); }
+/* Градиент ника — только если VIP активен и пользователь не выключил его */
+function vipGradient(vip, c){
+  c = c || {};
+  if(vip && c.vipNick !== false && HEX_RE.test(c.vipC1 || '') && HEX_RE.test(c.vipC2 || '')) return { c1:c.vipC1, c2:c.vipC2 };
+  return null;
+}
+function applyVipFrame(el, vip, c){
+  if(!el) return;
+  c = c || {};
+  if(vip && c.vipFrame !== false && HEX_RE.test(c.vipC1 || '') && HEX_RE.test(c.vipC2 || '')){
+    el.classList.add('vip-frame'); el.style.setProperty('--v1', c.vipC1); el.style.setProperty('--v2', c.vipC2);
+  } else {
+    el.classList.remove('vip-frame'); el.style.removeProperty('--v1'); el.style.removeProperty('--v2');
+  }
+}
+/* Корона: файл crown.png в публичном бакете assets (Supabase → Storage); пока файла нет — эмодзи 👑 */
+function crownInnerHtml(){
+  return `<img src="${SUPABASE_URL}/storage/v1/object/public/assets/crown.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji',textContent:'👑'}))">`;
 }
 
 /* ===================== НИК: цвет роли + эффекты профиля ===================== */
@@ -1509,20 +1626,23 @@ function runShuffle(el, text){
 }
 /* Единая точка: цвет ника по роли + эффект из профиля (glow / gradient / shuffle).
    Используется в шапке, меню аватарки, превью и на странице профиля. */
-function applyNameFx(el, fx, role, text){
+function applyNameFx(el, fx, role, text, grad){
   if(!el) return;
   text = String(text == null ? '' : text);
-  const sig = [fx||'none', role||'', text].join('|');
+  const sig = [fx||'none', role||'', text, grad ? grad.c1 + grad.c2 : ''].join('|');
   if(el._fxSig === sig && el.isConnected) return;
   el._fxSig = sig;
   clearInterval(el._fxTimer); clearTimeout(el._fxTimeout);
   el.classList.add('role-name');
   FX_CLASSES.forEach(c=>el.classList.remove(c));
   if(role && ROLE_LABELS[role]) el.setAttribute('data-role', role); else el.removeAttribute('data-role');
+  if(grad){ el.style.setProperty('--rc', grad.c1); el.style.setProperty('--rc2', grad.c2); }
+  else { el.style.removeProperty('--rc'); el.style.removeProperty('--rc2'); }
   el.textContent = text;
   if(fx === 'glow') el.classList.add('fx-glow');
   else if(fx === 'gradient') el.classList.add('fx-gradient');
   else if(fx === 'shuffle'){ el.classList.add('fx-shuffle'); runShuffle(el, text); }
+  if(grad) el.classList.add('fx-gradient'); // VIP: ник всегда градиентом из двух выбранных цветов
 }
 
 function renderRoleBadge(el, role){
@@ -1734,8 +1854,18 @@ function updatePreviewLook(){
 }
 function updatePreview(){
   document.getElementById('previewName').textContent = state.profile.name || 'Ваше имя';
-  renderRoleStack(document.getElementById('previewRoles'), state.profile.role, state.profile.depts, state.profile.rolesLayout);
-  document.getElementById('previewNameRow').classList.toggle('col', state.profile.rolesLayout === 'column');
+  renderRoleStack(document.getElementById('previewRoles'), state.profile.role, state.profile.depts, state.profile.rolesLayout, state.profile.primaryRole, state.profile.roleBgOpacity);
+  document.getElementById('previewNameRow').classList.toggle('col', state.profile.rolesLayout !== 'row');
+  const vipNow = myVip();
+  const crownEl = document.getElementById('previewCrown');
+  const showCrown = vipNow && !!state.profile.crown;
+  if(crownEl){
+    crownEl.style.display = showCrown ? '' : 'none';
+    if(showCrown && !crownEl.firstChild) crownEl.innerHTML = crownInnerHtml();
+    document.getElementById('previewAvatarWrap').classList.toggle('has-crown', showCrown);
+  }
+  applyVipFrame(document.getElementById('previewCard'), vipNow, state.profile);
+  renderPrimaryPicker();
   document.getElementById('previewHandle').textContent = state.profile.handle ? '@'+state.profile.handle.replace('@','') : '@username';
   document.getElementById('previewBio').textContent = state.profile.bio || 'Пара строк о себе появится здесь.';
   document.getElementById('previewLoc').textContent = '📍 ' + (state.profile.loc || '—');
@@ -1748,9 +1878,9 @@ function updatePreview(){
   if(state.profile.avatar) av.innerHTML = `<img src="${state.profile.avatar}">`;
   else av.innerHTML = `<span>${(state.profile.name||'A')[0].toUpperCase()}</span>`;
 
-  applyNameFx(document.getElementById('previewName'), state.profile.nameFx, nickRole(state.profile.role, state.profile.depts), state.profile.name || 'Ваше имя');
+  applyNameFx(document.getElementById('previewName'), state.profile.nameFx, nickRole(state.profile.role, state.profile.depts, state.profile.primaryRole), state.profile.name || 'Ваше имя', vipGradient(myVip(), state.profile));
   const hdrNick = document.querySelector('#openAuthBtn .nick');
-  if(hdrNick && currentUser) applyNameFx(hdrNick, state.profile.nameFx, nickRole(state.profile.role, state.profile.depts), currentUser.name);
+  if(hdrNick && currentUser) applyNameFx(hdrNick, state.profile.nameFx, nickRole(state.profile.role, state.profile.depts, state.profile.primaryRole), currentUser.name, vipGradient(myVip(), state.profile));
 
   document.getElementById('previewSocials').innerHTML = state.profile.links.filter(l=>l.url).map(l=>`<a href="${l.url}" target="_blank" rel="noopener" title="${l.type}">${socialIcons[l.type]||'🔗'}</a>`).join('') || '<span style="font-size:11px;color:var(--faint)">Ссылок пока нет</span>';
 
@@ -1837,6 +1967,67 @@ function startBgEffect(type){
   draw();
 }
 
+/* ===================== ОСНОВНАЯ РОЛЬ, ПРОЗРАЧНОСТЬ РОЛИ, VIP-ВКЛАДКА ===================== */
+function renderPrimaryPicker(){
+  const seg = document.getElementById('primaryRoleSeg');
+  if(!seg) return;
+  const hint = document.getElementById('primaryRoleHint');
+  const list = allRoles(state.profile.role, state.profile.depts);
+  if(list.length < 2){
+    seg.innerHTML = '';
+    hint.textContent = list.length ? 'У вас одна роль — выбирать нечего.' : 'У вас пока нет ролей.';
+    return;
+  }
+  const cur = nickRole(state.profile.role, state.profile.depts, state.profile.primaryRole);
+  seg.innerHTML = list.map(r=>`<button type="button" data-primary="${r}" class="${r===cur?'on':''}">${ROLE_LABELS[r]}</button>`).join('');
+  hint.textContent = 'Эта роль показывается первой и задаёт цвет ника.';
+  seg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+    state.profile.primaryRole = b.dataset.primary; updatePreview(); schedulePersistProfile();
+  }));
+}
+document.getElementById('roleBgRange').addEventListener('input', e=>{
+  state.profile.roleBgOpacity = +e.target.value;
+  document.getElementById('roleBgVal').textContent = e.target.value;
+  updatePreview(); schedulePersistProfile();
+});
+
+const VIP_PRESETS = [['#8B7CFF','#FF7CC8'],['#FFD86B','#FF8A3D'],['#4ADE80','#22D3EE'],['#F472B6','#FB7185'],['#60A5FA','#A78BFA'],['#F87171','#FBBF24'],['#34D399','#FDE047'],['#E879F9','#38BDF8']];
+function vipStatusText(){
+  const u = state.profile.vipUntil;
+  if(!isVipUntil(u)) return 'VIP не активен.';
+  if(new Date(u).getFullYear() >= 2900) return 'VIP активен — навсегда.';
+  return 'VIP активен до ' + new Date(u).toLocaleDateString('ru-RU') + '.';
+}
+function renderVipPane(){
+  const st = document.getElementById('vipStatus');
+  if(!st) return;
+  const p = state.profile, vip = myVip();
+  st.textContent = vipStatusText();
+  document.getElementById('vipControls').classList.toggle('locked', !vip);
+  document.getElementById('vipHow').innerHTML = vip
+    ? 'Срок продлевается донатом: каждые 100 ⭐ = 30 дней VIP.'
+    : 'Как получить VIP: <a href="donate.html" style="color:var(--primary); text-decoration:underline;">донат Telegram Stars</a> (каждые 100 ⭐ = 30 дней VIP) или выдача администрацией.';
+  document.getElementById('vipC1').value = (p.vipC1 || '#8B7CFF').toLowerCase();
+  document.getElementById('vipC2').value = (p.vipC2 || '#FF7CC8').toLowerCase();
+  document.getElementById('tVipNick').checked = p.vipNick !== false;
+  document.getElementById('tVipFrame').checked = p.vipFrame !== false;
+  document.getElementById('tCrown').checked = !!p.crown;
+  document.getElementById('vipPresets').innerHTML = VIP_PRESETS.map((g,i)=>`<button type="button" class="vip-preset" data-i="${i}" style="background:linear-gradient(135deg,${g[0]},${g[1]});" aria-label="Пресет ${i+1}"></button>`).join('');
+  document.querySelectorAll('#vipPresets .vip-preset').forEach(b=>b.addEventListener('click', ()=>{
+    const g = VIP_PRESETS[+b.dataset.i];
+    state.profile.vipC1 = g[0]; state.profile.vipC2 = g[1];
+    renderVipPane(); updatePreview(); schedulePersistProfile();
+  }));
+  applyNameFx(document.getElementById('vipSample'), 'none', null, 'Ваш ник', { c1: p.vipC1 || '#8B7CFF', c2: p.vipC2 || '#FF7CC8' });
+}
+['vipC1','vipC2'].forEach(id=>document.getElementById(id).addEventListener('input', e=>{
+  state.profile[id] = e.target.value.toUpperCase();
+  applyNameFx(document.getElementById('vipSample'), 'none', null, 'Ваш ник', { c1: state.profile.vipC1, c2: state.profile.vipC2 });
+  updatePreview(); schedulePersistProfile();
+}));
+document.getElementById('tVipNick').addEventListener('change', e=>{ state.profile.vipNick = e.target.checked; updatePreview(); schedulePersistProfile(); });
+document.getElementById('tVipFrame').addEventListener('change', e=>{ state.profile.vipFrame = e.target.checked; updatePreview(); schedulePersistProfile(); });
+
 /* ===================== УПРАВЛЕНИЕ РОЛЯМИ (форма для владельца и помощника) ===================== */
 const MAIN_ROLES = ['user','monkey','helper','moder','howner','owner'];
 const DEPT_ROLES = ['app','gmoder'];
@@ -1867,12 +2058,13 @@ function renderRolesPicked(){
   const name = rolesPicked.display_name || ('UUID ' + rolesPicked.id.slice(0, 8) + '…');
   const badges = roleBadgesHtml(rolesPicked.role, rolesPicked.depts);
   box.style.display = 'flex';
-  box.innerHTML = `<span>Выбран:</span><b class="role-name" ${nr ? `data-role="${nr}"` : ''}>${escapeHtmlClient(name)}</b>${badges || '<span style="color:var(--faint);">без роли</span>'}${rolesPicked.fresh ? '<span style="color:var(--faint); font-size:12px; width:100%;">Профиль ещё не создан — он создастся автоматически при выдаче роли.</span>' : ''}`;
+  box.innerHTML = `<span>Выбран:</span><b class="role-name" ${nr ? `data-role="${nr}"` : ''}>${escapeHtmlClient(name)}</b>${badges || '<span style="color:var(--faint);">без роли</span>'}${rolesPicked.vip ? '<span class="role-badge" style="--rc:#c084fc;">💎 VIP</span>' : ''}${rolesPicked.fresh ? '<span style="color:var(--faint); font-size:12px; width:100%;">Профиль ещё не создан — он создастся автоматически при выдаче роли.</span>' : ''}`;
 }
 function pickRolesTarget(u){
   rolesPicked = u;
   rolesChosen = MAIN_ROLES.includes(u.role) ? u.role : 'user';
   deptsChosen = new Set([...(Array.isArray(u.depts) ? u.depts : []), ...(DEPT_ROLES.includes(u.role) ? [u.role] : [])]);
+  document.getElementById('rolesVip').value = 'keep';
   renderRolesPicked(); renderRolesGrid(); updateRolesApply();
 }
 /* UUID вставили — выбираем сразу, не дожидаясь поиска: у только что зарегистрированного профиля может не быть имени/строки */
@@ -1931,13 +2123,14 @@ document.getElementById('rolesApply').addEventListener('click', async ()=>{
     if(!token) throw new Error('Войдите в аккаунт заново');
     const res = await fetch(REPORT_ENDPOINT + '/admin/role', {
       method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ access_token: token, target_id: rolesPicked.id, role: rolesChosen || 'user', depts: [...deptsChosen] })
+      body: JSON.stringify({ access_token: token, target_id: rolesPicked.id, role: rolesChosen || 'user', depts: [...deptsChosen], vip: document.getElementById('rolesVip').value })
     });
     const out = await res.json().catch(()=>({}));
     if(!res.ok || !out.ok) throw new Error(out.message || 'Не удалось выдать роль');
     rolesPicked.role = rolesChosen || 'user';
     rolesPicked.depts = [...deptsChosen];
     rolesPicked.fresh = false;
+    if(document.getElementById('rolesVip').value !== 'keep'){ rolesPicked.vip = document.getElementById('rolesVip').value !== 'remove'; document.getElementById('rolesVip').value = 'keep'; }
     if(out.display_name) rolesPicked.display_name = out.display_name;
     renderRolesPicked();
     note.textContent = out.message || 'Готово';
@@ -2060,6 +2253,7 @@ function updateReqFieldsVisibility(){
   document.getElementById('reqNameWrap').style.display = isAdd ? '' : 'none';
   document.getElementById('reqLinkWrap').style.display = isAdd ? '' : 'none';
   document.getElementById('reqGithubWrap').style.display = isAdd ? '' : 'none';
+  document.getElementById('reqIconWrap').style.display = isAdd ? '' : 'none';
   document.getElementById('reqCommentWrap').style.display = isBug ? 'none' : '';
   document.getElementById('reqWhatWrongWrap').style.display = isBug ? '' : 'none';
   document.getElementById('reqExpectedWrap').style.display = isBug ? '' : 'none';
@@ -2081,6 +2275,50 @@ document.querySelectorAll('#reqType button').forEach(b=>{
   });
 });
 updateReqFieldsVisibility();
+
+/* ===================== ИКОНКА ПРИЛОЖЕНИЯ В ЗАЯВКЕ ===================== */
+let reqIconBlob = null;
+function resetReqIcon(){
+  reqIconBlob = null;
+  const pv = document.getElementById('reqIconPrev'); if(pv) pv.textContent = '📦';
+  const cl = document.getElementById('reqIconClear'); if(cl) cl.style.display = 'none';
+  const inp = document.getElementById('reqIconInput'); if(inp) inp.value = '';
+}
+/* Обрезаем до квадрата и уменьшаем до 256×256 PNG — файл маленький и одинаковый у всех приложений */
+async function processIconFile(file){
+  if(!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('Нужен PNG, JPG или WebP');
+  if(file.size > 8 * 1024 * 1024) throw new Error('Файл слишком большой (до 8 МБ)');
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((res, rej)=>{ const i = new Image(); i.onload = ()=>res(i); i.onerror = ()=>rej(new Error('Не удалось прочитать картинку')); i.src = url; });
+    const size = Math.min(img.width, img.height);
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
+    canvas.getContext('2d').drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, 256, 256);
+    const blob = await new Promise(res=>canvas.toBlob(res, 'image/png'));
+    if(!blob) throw new Error('Не удалось обработать картинку');
+    return blob;
+  } finally { URL.revokeObjectURL(url); }
+}
+document.getElementById('reqIconBtn').addEventListener('click', ()=>{
+  if(!currentUser){ showToast('Войдите в аккаунт, чтобы добавить иконку'); return; }
+  document.getElementById('reqIconInput').click();
+});
+document.getElementById('reqIconInput').addEventListener('change', async e=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  try{
+    reqIconBlob = await processIconFile(file);
+    const pv = document.getElementById('reqIconPrev');
+    pv.innerHTML = '';
+    const im = document.createElement('img'); im.src = URL.createObjectURL(reqIconBlob); im.alt = '';
+    pv.appendChild(im);
+    document.getElementById('reqIconClear').style.display = '';
+  }catch(err){
+    resetReqIcon();
+    showToast(err.message || 'Не удалось добавить иконку');
+  }
+});
+document.getElementById('reqIconClear').addEventListener('click', resetReqIcon);
 
 async function sendToBackend(payload){
   if(!REPORT_ENDPOINT || REPORT_ENDPOINT.includes('YOUR-WORKER-NAME')) return {ok:false};
@@ -2119,13 +2357,22 @@ document.getElementById('reqSubmit').addEventListener('click', async ()=>{
     const comment = document.getElementById('reqComment').value.trim();
     if(!name){ showToast('Укажите название приложения'); return; }
     payload = {type:reqType, name, link, githubUrl, comment, contact, userId: currentUser?currentUser.id:null, user: currentUser?currentUser.name:null, ts:Date.now()};
+    if(reqIconBlob){
+      if(!currentUser || !sbClient){ showToast('Войдите в аккаунт, чтобы приложить иконку'); return; }
+      const iconPath = `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`;
+      const up = await sbClient.storage.from('app-icons').upload(iconPath, reqIconBlob, { contentType:'image/png', upsert:false });
+      if(up.error){ showToast('Не удалось загрузить иконку: ' + (up.error.message || 'ошибка хранилища')); return; }
+      const { data: sess } = await sbClient.auth.getSession();
+      payload.iconPath = iconPath;                                 // воркер проверит, что файл лежит в папке этого пользователя
+      payload.accessToken = sess?.session?.access_token || null;
+    }
     summaryTitle = `${typeLabels[reqType]}: ${name}`;
     summarySub = comment||link||'Без комментария';
   }
 
   const result = await sendToBackend(payload);
   if(result.ok && resubmitOfId && reqType === 'add'){ markResubmitted(resubmitOfId); }
-  if(result.ok) resubmitOfId = null;
+  if(result.ok){ resubmitOfId = null; resetReqIcon(); }
   outbox.unshift({title:summaryTitle, sub: summarySub, status: result.ok?'sent':'pending', time:new Date().toLocaleString('ru-RU')});
   try{ localStorage.setItem('devhub_outbox', JSON.stringify(outbox.slice(0,50))); }catch(e){}
   state.profile.statSuggestions = (state.profile.statSuggestions||0) + 1;

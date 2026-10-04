@@ -59,6 +59,16 @@ img{max-width:100%; display:block;}
 .btn-ghost{background:var(--surface2); color:var(--text); border-color:var(--border);}
 .btn-sm{padding:6px 11px; font-size:12px; border-radius:9px;}
 
+.vip-frame{position:relative;}
+.vip-frame::before{content:""; position:absolute; inset:0; padding:2px; border-radius:inherit; background:linear-gradient(135deg, var(--v1), var(--v2)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; z-index:2;}
+.avatar-wrap{position:relative; width:max-content; margin:0 auto;}
+.avatar-wrap.has-crown{margin-top:30px;}
+.vip-crown{position:absolute; left:50%; top:0; transform:translate(-50%,-74%); width:52px; height:52px; pointer-events:none; z-index:3; display:flex; align-items:center; justify-content:center; filter:drop-shadow(0 2px 6px rgba(0,0,0,.55));}
+.vip-crown img{width:100%; height:100%; object-fit:contain;}
+.vip-crown .emoji{font-size:36px; line-height:1;}
+.user-badge.vip-badge{background:linear-gradient(120deg, rgba(192,132,252,.25), rgba(244,114,182,.25)); color:#e9c8ff; border-color:rgba(192,132,252,.5);}
+.tool-icon{overflow:hidden;}
+.tool-icon img{width:100%; height:100%; object-fit:cover;}
 .profile-hero{padding:32px 24px; text-align:center; margin-bottom:20px;}
 .profile-avatar{width:96px; height:96px; border-radius:50%; margin:0 auto 16px; overflow:hidden; background:var(--primary-soft); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:32px; color:var(--primary);}
 .profile-avatar img{width:100%; height:100%; object-fit:cover;}
@@ -81,7 +91,7 @@ html[data-theme="day"] .role-gmoder,html[data-theme="day"] [data-role="gmoder"]{
 html[data-theme="day"] .role-howner,html[data-theme="day"] [data-role="howner"]{--rc:#1d4ed8; --rc2:#3b82f6;}
 html[data-theme="day"] .role-owner,html[data-theme="day"] [data-role="owner"]{--rc:#dc2626; --rc2:#ef4444;}
 html[data-theme="day"] .role-name{filter:none;}
-.role-badge{border-radius:5px; font-weight:700; color:var(--rc, var(--muted)); background:color-mix(in srgb, var(--rc, var(--muted)) 15%, transparent); border:1px solid color-mix(in srgb, var(--rc, var(--muted)) 42%, transparent);}
+.role-badge{border-radius:5px; font-weight:700; color:var(--rc, var(--muted)); background:color-mix(in srgb, var(--rc, var(--muted)) var(--rb, 15%), transparent); border:1px solid color-mix(in srgb, var(--rc, var(--muted)) 42%, transparent);}
 .role-badge.role-app,.role-badge.role-gmoder{font-size:9.5px; font-weight:600; padding:1px 7px; opacity:.85;}
 .role-name{color:var(--rc, inherit);}
 .role-name.fx-glow{text-shadow:0 0 14px var(--rc, var(--primary)), 0 0 2px color-mix(in srgb, var(--rc, var(--primary)) 55%, transparent);}
@@ -156,17 +166,38 @@ try{
 const ROLE_LABELS = { user:null, monkey:'Манки', helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
 /* ===================== НЕСКОЛЬКО РОЛЕЙ: основная + отделы ===================== */
 const ROLE_RANK_CLIENT = { user:0, monkey:1, helper:1, app:2, gmoder:2, moder:3, howner:4, owner:5 };
-function allRoles(role, depts){
+function allRoles(role, depts, primary){
   const out = [];
   if(role && ROLE_LABELS[role]) out.push(role);
   (Array.isArray(depts) ? depts : []).forEach(d=>{ if(ROLE_LABELS[d] && !out.includes(d)) out.push(d); });
+  if(primary && out.includes(primary)) return [primary, ...out.filter(r=>r!==primary)];
   return out;
 }
-function nickRole(role, depts){
-  return allRoles(role, depts).slice().sort((a,b)=>(ROLE_RANK_CLIENT[b]||0)-(ROLE_RANK_CLIENT[a]||0))[0] || null;
+function nickRole(role, depts, primary){
+  const l = allRoles(role, depts);
+  if(primary && l.includes(primary)) return primary;
+  return l.slice().sort((a,b)=>(ROLE_RANK_CLIENT[b]||0)-(ROLE_RANK_CLIENT[a]||0))[0] || null;
 }
-function roleBadgesHtml(role, depts){
-  return allRoles(role, depts).map(r=>`<span class="role-badge role-${r}">${ROLE_LABELS[r]}</span>`).join('');
+function roleBadgesHtml(role, depts, primary){
+  return allRoles(role, depts, primary).map(r=>`<span class="role-badge role-${r}">${ROLE_LABELS[r]}</span>`).join('');
+}
+
+/* ===================== VIP: градиент ника и рамки, корона ===================== */
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+function vipGradient(vip, c){
+  c = c || {};
+  if(vip && c.vipNick !== false && HEX_RE.test(c.vipC1 || '') && HEX_RE.test(c.vipC2 || '')) return { c1:c.vipC1, c2:c.vipC2 };
+  return null;
+}
+function applyVipFrame(el, vip, c){
+  if(!el) return;
+  c = c || {};
+  if(vip && c.vipFrame !== false && HEX_RE.test(c.vipC1 || '') && HEX_RE.test(c.vipC2 || '')){
+    el.classList.add('vip-frame'); el.style.setProperty('--v1', c.vipC1); el.style.setProperty('--v2', c.vipC2);
+  }
+}
+function crownInnerHtml(){
+  return `<img src="${SUPABASE_URL}/storage/v1/object/public/assets/crown.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji',textContent:'👑'}))">`;
 }
 
 /* ===================== НИК: цвет роли + эффекты профиля ===================== */
@@ -190,20 +221,23 @@ function runShuffle(el, text){
 }
 /* Единая точка: цвет ника по роли + эффект из профиля (glow / gradient / shuffle).
    Используется в шапке, меню аватарки, превью и на странице профиля. */
-function applyNameFx(el, fx, role, text){
+function applyNameFx(el, fx, role, text, grad){
   if(!el) return;
   text = String(text == null ? '' : text);
-  const sig = [fx||'none', role||'', text].join('|');
+  const sig = [fx||'none', role||'', text, grad ? grad.c1 + grad.c2 : ''].join('|');
   if(el._fxSig === sig && el.isConnected) return;
   el._fxSig = sig;
   clearInterval(el._fxTimer); clearTimeout(el._fxTimeout);
   el.classList.add('role-name');
   FX_CLASSES.forEach(c=>el.classList.remove(c));
   if(role && ROLE_LABELS[role]) el.setAttribute('data-role', role); else el.removeAttribute('data-role');
+  if(grad){ el.style.setProperty('--rc', grad.c1); el.style.setProperty('--rc2', grad.c2); }
+  else { el.style.removeProperty('--rc'); el.style.removeProperty('--rc2'); }
   el.textContent = text;
   if(fx === 'glow') el.classList.add('fx-glow');
   else if(fx === 'gradient') el.classList.add('fx-gradient');
   else if(fx === 'shuffle'){ el.classList.add('fx-shuffle'); runShuffle(el, text); }
+  if(grad) el.classList.add('fx-gradient');
 }
 
 const BADGE_LABELS = { active:'⚡ Активный', author:'✍️ Автор', supporter:'⭐ Поддержал' };
@@ -233,7 +267,7 @@ function renderNotFound(){
 
 function appRowHTML(app){
   return `<div class="app-row card glass">
-    <div class="tool-icon">${app.icon || '📦'}</div>
+    <div class="tool-icon">${app.icon_url ? `<img src="${escapeHtml(app.icon_url)}" alt="" loading="lazy">` : (app.icon || '📦')}</div>
     <div class="app-meta">
       <div class="app-name">${escapeHtml(app.name)}</div>
       <div class="app-desc">${escapeHtml(app.description || '')}</div>
@@ -331,7 +365,14 @@ function setupOwnerPlayer(profile, c){
 function applyOwnerLook(profile){
   const c = profile.customization || {};
   // ник: цвет роли + эффект, выбранный владельцем в редакторе профиля
-  applyNameFx(document.getElementById('profNick'), c.nameFx, nickRole(profile.role, profile.depts), profile.display_name);
+  const vip = !!profile.vip;
+  applyNameFx(document.getElementById('profNick'), c.nameFx, nickRole(profile.role, profile.depts, c.primaryRole), profile.display_name, vipGradient(vip, c));
+  applyVipFrame(document.querySelector('.profile-hero'), vip, c);
+  const crownEl = document.getElementById('profCrown');
+  if(crownEl && vip && c.crown){
+    crownEl.innerHTML = crownInnerHtml(); crownEl.style.display = '';
+    document.getElementById('profAvatarWrap').classList.add('has-crown');
+  }
   const av = document.querySelector('.profile-avatar');
   if(av){
     av.style.borderRadius = ({circle:'50%', rounded:'20px', square:'6px'})[c.avatarShape] || '50%';
@@ -352,9 +393,14 @@ async function renderProfile(userId){
   }
 
   const BASE_FIELDS = 'id, display_name, handle, bio, location, avatar_url, links, stat_downloads, stat_suggestions, role';
-  const FULL_FIELDS = BASE_FIELDS + ', bg_url, bg_type, track_url, track_name, customization, theme, bg_preset, track_preset, badges, depts';
+  const FULL_FIELDS = BASE_FIELDS + ', bg_url, bg_type, track_url, track_name, customization, theme, bg_preset, track_preset, badges, depts, vip';
   let { data: profile, error: profileError } = await sbClient
     .from('public_profiles').select(FULL_FIELDS).eq('id', userId).maybeSingle();
+  if(profileError && /vip/i.test(profileError.message || '')){
+    // колонка vip появляется в миграции 6 — до неё показываем профиль без VIP
+    ({ data: profile, error: profileError } = await sbClient
+      .from('public_profiles').select(FULL_FIELDS.replace(', vip', '')).eq('id', userId).maybeSingle());
+  }
   if(profileError){
     // view ещё не обновлён миграцией — показываем хотя бы базовый профиль
     console.warn('Полный select не прошёл, пробуем базовый:', profileError.message);
@@ -367,12 +413,10 @@ async function renderProfile(userId){
     return;
   }
 
-  const { data: apps } = await sbClient
-    .from('apps')
-    .select('id, name, description, icon, rating')
-    .eq('added_by', userId)
-    .eq('status', 'approved')
-    .order('created_at', { ascending: false });
+  const fetchApps = cols => sbClient.from('apps').select(cols).eq('added_by', userId).eq('status', 'approved').order('created_at', { ascending: false });
+  let appsRes = await fetchApps('id, name, description, icon, icon_url, rating');
+  if(appsRes.error) appsRes = await fetchApps('id, name, description, icon, rating'); // миграция 6 ещё не применена
+  const apps = appsRes.data;
 
   const avatarHtml = profile.avatar_url
     ? `<img src="${profile.avatar_url}" alt="">`
@@ -382,9 +426,12 @@ async function renderProfile(userId){
     `<a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" title="${escapeHtml(l.type)}">${socialIcons[l.type]||'🔗'}</a>`
   ).join('');
 
-  const rolesLayout = ((profile.customization || {}).rolesLayout === 'column') ? 'column' : 'row';
-  const rolesHtml = roleBadgesHtml(profile.role, profile.depts);
-  const badgesHtml = (Array.isArray(profile.badges) ? profile.badges : [])
+  const pc = profile.customization || {};
+  const rolesLayout = pc.rolesLayout === 'row' ? 'row' : 'column';   // по умолчанию — столбиком
+  const rolesHtml = roleBadgesHtml(profile.role, profile.depts, pc.primaryRole);
+  const roleBg = Number.isFinite(pc.roleBgOpacity) ? pc.roleBgOpacity : 15;
+  const vipBadge = profile.vip ? '<span class="user-badge vip-badge">💎 VIP</span>' : '';
+  const badgesHtml = vipBadge + (Array.isArray(profile.badges) ? profile.badges : [])
     .filter(b=>BADGE_LABELS[b]).map(b=>`<span class="user-badge">${BADGE_LABELS[b]}</span>`).join('');
 
   const appsHtml = (apps && apps.length)
@@ -393,10 +440,10 @@ async function renderProfile(userId){
 
   document.getElementById('content').innerHTML = `
     <div class="profile-hero card glass">
-      <div class="profile-avatar">${avatarHtml}</div>
+      <div class="avatar-wrap" id="profAvatarWrap"><div class="vip-crown" id="profCrown" style="display:none;"></div><div class="profile-avatar">${avatarHtml}</div></div>
       <div class="profile-namerow ${rolesLayout === 'column' ? 'col' : ''}">
         <span class="profile-name" id="profNick"></span>
-        ${rolesHtml ? `<span class="role-stack ${rolesLayout === 'column' ? 'roles-col' : 'roles-row'}">${rolesHtml}</span>` : ''}
+        ${rolesHtml ? `<span class="role-stack ${rolesLayout === 'column' ? 'roles-col' : 'roles-row'}" style="--rb:${roleBg}%;">${rolesHtml}</span>` : ''}
       </div>
       ${profile.handle ? `<div class="profile-handle">@${escapeHtml(profile.handle)}</div>` : ''}
       ${profile.bio ? `<div class="profile-bio">${escapeHtml(profile.bio)}</div>` : ''}

@@ -91,6 +91,11 @@ html[data-theme="day"] .role-name{filter:none;}
 @media (prefers-reduced-motion:reduce){ .role-name.fx-gradient{animation:none;} }
 
 /* Авто-бейджи (не роли персонала — отдельная категория) */
+.role-stack{display:inline-flex; flex-wrap:wrap; gap:4px; align-items:center;}
+.role-stack.roles-col{display:flex; flex-direction:column; align-items:center; gap:4px;}
+.role-stack .role-badge{margin-left:0;}
+.profile-namerow{display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px 10px;}
+.profile-namerow.col{flex-direction:column; gap:6px;}
 .user-badges{display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-top:10px;}
 .user-badge{font-size:11.5px; font-weight:600; padding:4px 11px; border-radius:999px; background:var(--primary-soft); color:var(--primary); border:1px solid color-mix(in srgb, var(--primary) 30%, transparent);}
 .profile-handle{font-size:13px; color:var(--muted); margin-top:2px;}
@@ -149,6 +154,21 @@ try{
 }catch(e){}
 
 const ROLE_LABELS = { user:null, monkey:'Манки', helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
+/* ===================== НЕСКОЛЬКО РОЛЕЙ: основная + отделы ===================== */
+const ROLE_RANK_CLIENT = { user:0, monkey:1, helper:1, app:2, gmoder:2, moder:3, howner:4, owner:5 };
+function allRoles(role, depts){
+  const out = [];
+  if(role && ROLE_LABELS[role]) out.push(role);
+  (Array.isArray(depts) ? depts : []).forEach(d=>{ if(ROLE_LABELS[d] && !out.includes(d)) out.push(d); });
+  return out;
+}
+function nickRole(role, depts){
+  return allRoles(role, depts).slice().sort((a,b)=>(ROLE_RANK_CLIENT[b]||0)-(ROLE_RANK_CLIENT[a]||0))[0] || null;
+}
+function roleBadgesHtml(role, depts){
+  return allRoles(role, depts).map(r=>`<span class="role-badge role-${r}">${ROLE_LABELS[r]}</span>`).join('');
+}
+
 /* ===================== НИК: цвет роли + эффекты профиля ===================== */
 const FX_CLASSES = ['fx-glow','fx-gradient','fx-shuffle'];
 function runShuffle(el, text){
@@ -311,7 +331,7 @@ function setupOwnerPlayer(profile, c){
 function applyOwnerLook(profile){
   const c = profile.customization || {};
   // ник: цвет роли + эффект, выбранный владельцем в редакторе профиля
-  applyNameFx(document.getElementById('profNick'), c.nameFx, profile.role, profile.display_name);
+  applyNameFx(document.getElementById('profNick'), c.nameFx, nickRole(profile.role, profile.depts), profile.display_name);
   const av = document.querySelector('.profile-avatar');
   if(av){
     av.style.borderRadius = ({circle:'50%', rounded:'20px', square:'6px'})[c.avatarShape] || '50%';
@@ -332,7 +352,7 @@ async function renderProfile(userId){
   }
 
   const BASE_FIELDS = 'id, display_name, handle, bio, location, avatar_url, links, stat_downloads, stat_suggestions, role';
-  const FULL_FIELDS = BASE_FIELDS + ', bg_url, bg_type, track_url, track_name, customization, theme, bg_preset, track_preset, badges';
+  const FULL_FIELDS = BASE_FIELDS + ', bg_url, bg_type, track_url, track_name, customization, theme, bg_preset, track_preset, badges, depts';
   let { data: profile, error: profileError } = await sbClient
     .from('public_profiles').select(FULL_FIELDS).eq('id', userId).maybeSingle();
   if(profileError){
@@ -362,6 +382,8 @@ async function renderProfile(userId){
     `<a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" title="${escapeHtml(l.type)}">${socialIcons[l.type]||'🔗'}</a>`
   ).join('');
 
+  const rolesLayout = ((profile.customization || {}).rolesLayout === 'column') ? 'column' : 'row';
+  const rolesHtml = roleBadgesHtml(profile.role, profile.depts);
   const badgesHtml = (Array.isArray(profile.badges) ? profile.badges : [])
     .filter(b=>BADGE_LABELS[b]).map(b=>`<span class="user-badge">${BADGE_LABELS[b]}</span>`).join('');
 
@@ -372,7 +394,10 @@ async function renderProfile(userId){
   document.getElementById('content').innerHTML = `
     <div class="profile-hero card glass">
       <div class="profile-avatar">${avatarHtml}</div>
-      <div class="profile-name"><span id="profNick"></span>${ROLE_LABELS[profile.role] ? `<span class="role-badge role-${profile.role}">${ROLE_LABELS[profile.role]}</span>` : ''}</div>
+      <div class="profile-namerow ${rolesLayout === 'column' ? 'col' : ''}">
+        <span class="profile-name" id="profNick"></span>
+        ${rolesHtml ? `<span class="role-stack ${rolesLayout === 'column' ? 'roles-col' : 'roles-row'}">${rolesHtml}</span>` : ''}
+      </div>
       ${profile.handle ? `<div class="profile-handle">@${escapeHtml(profile.handle)}</div>` : ''}
       ${profile.bio ? `<div class="profile-bio">${escapeHtml(profile.bio)}</div>` : ''}
       ${profile.location ? `<div class="profile-loc">📍 ${escapeHtml(profile.location)}</div>` : ''}

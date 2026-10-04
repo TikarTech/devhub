@@ -99,6 +99,13 @@ html[data-theme="day"] .role-name{filter:none;}
 @keyframes nameShift{to{background-position:200% 0;}}
 @media (prefers-reduced-motion:reduce){ .role-name.fx-gradient{animation:none;} }
 
+/* ---- несколько ролей: рядом с ником (row) или столбиком под ником (column) ---- */
+.role-stack{display:inline-flex; flex-wrap:wrap; gap:4px; align-items:center;}
+.role-stack.roles-col{display:flex; flex-direction:column; align-items:center; gap:4px;}
+.role-stack .role-badge{margin-left:0;}
+.preview-namerow{display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px 10px;}
+.preview-namerow.col{flex-direction:column; gap:6px;}
+.roles-sub{font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--faint); margin:12px 0 6px;}
 /* ---- форма «Управление ролями» ---- */
 .roles-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
 .role-opt{display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:9px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:12.5px; font-weight:700; text-align:left;}
@@ -482,6 +489,12 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
                   <button data-shape="rounded">Скругл.</button>
                   <button data-shape="square">Квадрат</button>
                 </div></div>
+              <div class="field"><label>Отображение ролей</label>
+                <div class="shape-seg" id="rolesLayoutSeg">
+                  <button class="on" data-layout="row">Горизонтально</button>
+                  <button data-layout="column">Вертикально</button>
+                </div>
+                <div class="user-search-hint">Горизонтально — рядом с ником. Вертикально — столбиком под ником. Видно в вашем профиле.</div></div>
               <div class="toggle-row"><div><div class="t">Кольцо вокруг аватара</div><div class="d">В цвет акцента темы</div></div>
                 <label class="switch"><input type="checkbox" id="tRing"><span class="track"></span><span class="knob"></span></label></div>
             </div>
@@ -571,8 +584,10 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
         <div class="preview-wrap">
           <div class="preview-card glass" id="previewCard">
             <div class="preview-avatar circle" id="previewAvatar"><span id="previewAvatarLetter">A</span></div>
-            <div class="preview-name" id="previewName">Ваше имя</div>
-            <span class="role-badge" id="previewRoleBadge" style="display:none;"></span>
+            <div class="preview-namerow" id="previewNameRow">
+              <div class="preview-name" id="previewName">Ваше имя</div>
+              <div class="role-stack roles-row" id="previewRoles" style="display:none;"></div>
+            </div>
             <div class="preview-handle" id="previewHandle">@username</div>
             <div class="preview-bio" id="previewBio">Пара строк о себе появится здесь.</div>
             <div class="preview-loc" id="previewLoc">📍 —</div>
@@ -690,11 +705,14 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
   <div class="modal glass" style="max-width:520px;">
     <button class="modal-close" data-close="rolesBackdrop">✕</button>
     <h3>Управление ролями</h3>
-    <p class="sub">Найдите пользователя и выдайте роль. Применяется сразу на сайте; роли «Помощник генерала» и «Генерал» дают права и в боте.</p>
-    <div class="field"><label>Пользователь</label><input id="rolesSearch" placeholder="Имя, @handle или UUID" autocomplete="off"></div>
+    <p class="sub">Найдите пользователя или вставьте его UUID — подойдёт и сразу после регистрации. Роль и отделы выдаются независимо и не заменяют друг друга. «Помощник генерала» и «Генерал» дают права и в боте.</p>
+    <div class="field"><label>Пользователь</label><input id="rolesSearch" placeholder="Имя, @handle или UUID — UUID определится сразу" autocomplete="off"></div>
     <div id="rolesResults"></div>
     <div class="roles-picked" id="rolesPicked" style="display:none;"></div>
-    <div class="field"><label>Роль</label><div class="roles-grid" id="rolesGrid"></div></div>
+    <div class="roles-sub">Роль</div>
+    <div class="roles-grid" id="rolesGrid"></div>
+    <div class="roles-sub">Отделы (можно несколько, не заменяют роль)</div>
+    <div class="roles-grid" id="deptsGrid" style="margin-bottom:14px;"></div>
     <button class="btn btn-primary" id="rolesApply" style="width:100%; justify-content:center;" disabled>Выдать роль</button>
     <div class="user-search-hint" id="rolesNote"></div>
   </div>
@@ -806,7 +824,7 @@ const themes = [
 let state = {
   theme:'night', lang:'ru', tz:'Europe/Moscow',
   profile:{name:'', handle:'', bio:'', loc:'', avatar:null, opacity:58, blur:22, radius:26, avatarShape:'circle', ring:false,
-    bg:'none', bgCustom:null, bgType:null, dim:72, bgFx:'none', track:'none', trackCustom:null, trackName:null, autoplay:false, volume:44, role:'user',
+    bg:'none', bgCustom:null, bgType:null, dim:72, bgFx:'none', track:'none', trackCustom:null, trackName:null, autoplay:false, volume:44, role:'user', depts:[], rolesLayout:'row',
     nameFx:'none', tilt:false, crown:false, links:[], statDownloads:0, statSuggestions:0},
 };
 let currentUser = null;
@@ -989,11 +1007,11 @@ function renderUserMenu(){
     const av = currentUser.avatarUrl
       ? `<img src="${currentUser.avatarUrl}" alt="">`
       : `<span class="um-ph">${name[0] ? name[0].toUpperCase() : '?'}</span>`;
-    const roleLabel = ROLE_LABELS[state.profile.role];
-    const badge = roleLabel ? `<span class="role-badge role-${state.profile.role}" style="margin-left:0; margin-top:3px;">${roleLabel}</span>` : '';
+    const menuBadges = roleBadgesHtml(state.profile.role, state.profile.depts);
+    const badge = menuBadges ? `<div class="role-stack roles-col" style="align-items:flex-start; margin-top:3px;">${menuBadges}</div>` : '';
     head.style.display = '';
     head.innerHTML = `${av}<div style="min-width:0;"><div class="um-name"></div>${badge}</div>`;
-    applyNameFx(head.querySelector('.um-name'), state.profile.nameFx, state.profile.role, currentUser.name || 'Пользователь');
+    applyNameFx(head.querySelector('.um-name'), state.profile.nameFx, nickRole(state.profile.role, state.profile.depts), currentUser.name || 'Пользователь');
   } else {
     head.style.display = 'none';
   }
@@ -1136,10 +1154,10 @@ function updateAuthUI(){
     const avatarHtml = currentUser.avatarUrl
       ? `<img src="${currentUser.avatarUrl}" alt="">`
       : `<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--primary-soft);align-items:center;justify-content:center;font-size:12px;">${currentUser.name[0].toUpperCase()}</span>`;
-    const roleLabel = ROLE_LABELS[state.profile.role];
-    const badgeHtml = roleLabel ? ` <span class="role-badge role-${state.profile.role} chip-name">${roleLabel}</span>` : '';
+    const hdrBadges = roleBadgesHtml(state.profile.role, state.profile.depts);
+    const badgeHtml = hdrBadges ? ` <span class="role-stack roles-row chip-name" style="margin-left:4px;">${hdrBadges}</span>` : '';
     btn.innerHTML = `${avatarHtml}&nbsp;<span class="chip-name nick"></span>${badgeHtml}`;
-    applyNameFx(btn.querySelector('.nick'), state.profile.nameFx, state.profile.role, currentUser.name);
+    applyNameFx(btn.querySelector('.nick'), state.profile.nameFx, nickRole(state.profile.role, state.profile.depts), currentUser.name);
     const hint = document.getElementById('scopeAccountHint');
     if(hint) hint.textContent = 'вход выполнен';
     if(signOutBtn) signOutBtn.style.display = 'inline-flex';
@@ -1208,6 +1226,7 @@ async function loadProfileFromSupabase(userId){
     loc: data.location || state.profile.loc,
     avatar: data.avatar_url || null,
     role: data.role || 'user',
+    depts: Array.isArray(data.depts) ? data.depts : [],
     bg: data.bg_url ? 'custom' : (data.bg_preset || state.profile.bg),
     bgCustom: data.bg_url || null,
     bgType: data.bg_type || null,
@@ -1224,6 +1243,7 @@ async function loadProfileFromSupabase(userId){
     ring: c.ring ?? state.profile.ring,
     tilt: c.tilt ?? state.profile.tilt,
     crown: c.crown ?? state.profile.crown,
+    rolesLayout: c.rolesLayout || state.profile.rolesLayout || 'row',
     nameFx: c.nameFx || state.profile.nameFx,
     bgFx: c.bgFx || state.profile.bgFx,
     dim: c.dim ?? state.profile.dim,
@@ -1264,7 +1284,7 @@ async function saveProfileToSupabase(){
     stat_suggestions: p.statSuggestions || 0,
     customization: {
       opacity: p.opacity, blur: p.blur, radius: p.radius, avatarShape: p.avatarShape,
-      ring: p.ring, tilt: p.tilt, crown: p.crown, nameFx: p.nameFx, bgFx: p.bgFx,
+      ring: p.ring, tilt: p.tilt, crown: p.crown, nameFx: p.nameFx, bgFx: p.bgFx, rolesLayout: p.rolesLayout || 'row',
       dim: p.dim, volume: p.volume, autoplay: p.autoplay
     }
   };
@@ -1294,6 +1314,7 @@ function syncAppearanceControls(){
   const setCheck = (id,v)=>{ const el=document.getElementById(id); if(el) el.checked = !!v; };
   setCheck('tAutoplay', p.autoplay); setCheck('tRing', p.ring); setCheck('tTilt', p.tilt); setCheck('tCrown', p.crown);
   document.querySelectorAll('#avatarShape button').forEach(b=>b.classList.toggle('on', b.dataset.shape===p.avatarShape));
+  document.querySelectorAll('#rolesLayoutSeg button').forEach(b=>b.classList.toggle('on', b.dataset.layout===(p.rolesLayout||'row')));
   document.querySelectorAll('#effectGrid .effect-opt').forEach(x=>x.classList.toggle('selected', x.dataset.fx===(p.bgFx||'none')));
   document.querySelectorAll('#nameEffectGrid .effect-opt').forEach(x=>x.classList.toggle('selected', x.dataset.nfx===(p.nameFx||'none')));
   document.getElementById('bgDim').style.opacity = (p.dim ?? 72)/100;
@@ -1379,19 +1400,17 @@ async function searchUsers(rawQuery){
   if(!sbClient){ box.innerHTML = '<div class="user-search-hint">Сервис недоступен</div>'; return; }
   const q = rawQuery.replace(/^@/, '').replace(/[%,()*\\]/g, ' ').trim();
   if(!q){ box.innerHTML = ''; return; }
-  const { data, error } = await sbClient
-    .from('public_profiles')
-    .select('id, display_name, handle, avatar_url, role')
-    .or(`display_name.ilike.%${q}%,handle.ilike.%${q}%`)
-    .limit(10);
+  const { data, error } = await queryPublicProfiles('id, display_name, handle, avatar_url, role',
+    qb => qb.or(`display_name.ilike.%${q}%,handle.ilike.%${q}%`).limit(10));
   if(error){ console.error('searchUsers failed:', error.message); box.innerHTML = '<div class="user-search-hint">Не удалось выполнить поиск</div>'; return; }
   if(!data || !data.length){ box.innerHTML = '<div class="user-search-hint">Никого не нашли</div>'; return; }
   box.innerHTML = data.map(u=>{
     const name = escapeHtmlClient(u.display_name || 'Без имени');
     const av = u.avatar_url ? `<img src="${u.avatar_url}" alt="">` : `<span class="ur-ph">${name[0].toUpperCase()}</span>`;
-    const roleLabel = ROLE_LABELS[u.role];
-    const badge = roleLabel ? `<span class="role-badge role-${u.role}">${roleLabel}</span>` : '';
-    return `<a class="user-result" href="profile.html?id=${u.id}">${av}<div style="flex:1; min-width:0;"><div class="ur-name">${roleLabel ? `<span class="role-name" data-role="${u.role}">${name}</span>` : name}${badge}</div>${u.handle ? `<div class="ur-handle">@${escapeHtmlClient(u.handle)}</div>` : ''}</div></a>`;
+    const nr = nickRole(u.role, u.depts);
+    const roleLabel = nr;
+    const badge = roleBadgesHtml(u.role, u.depts);
+    return `<a class="user-result" href="profile.html?id=${u.id}">${av}<div style="flex:1; min-width:0;"><div class="ur-name">${nr ? `<span class="role-name" data-role="${nr}">${name}</span>` : name}${badge}</div>${u.handle ? `<div class="ur-handle">@${escapeHtmlClient(u.handle)}</div>` : ''}</div></a>`;
   }).join('');
 }
 
@@ -1440,6 +1459,35 @@ function escapeHtml(str){
 }
 
 const ROLE_LABELS = { user:null, monkey:'Манки', helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
+/* ===================== НЕСКОЛЬКО РОЛЕЙ: основная + отделы ===================== */
+const ROLE_RANK_CLIENT = { user:0, monkey:1, helper:1, app:2, gmoder:2, moder:3, howner:4, owner:5 };
+/* Все роли человека: основная (если есть) + отделы, без дублей */
+function allRoles(role, depts){
+  const out = [];
+  if(role && ROLE_LABELS[role]) out.push(role);
+  (Array.isArray(depts) ? depts : []).forEach(d=>{ if(ROLE_LABELS[d] && !out.includes(d)) out.push(d); });
+  return out;
+}
+/* Роль, чей цвет получает ник — самая старшая из всех */
+function nickRole(role, depts){
+  return allRoles(role, depts).slice().sort((a,b)=>(ROLE_RANK_CLIENT[b]||0)-(ROLE_RANK_CLIENT[a]||0))[0] || null;
+}
+function roleBadgesHtml(role, depts){
+  return allRoles(role, depts).map(r=>`<span class="role-badge role-${r}">${ROLE_LABELS[r]}</span>`).join('');
+}
+function renderRoleStack(el, role, depts, layout){
+  if(!el) return;
+  const html = roleBadgesHtml(role, depts);
+  el.innerHTML = html;
+  el.style.display = html ? '' : 'none';
+  el.className = 'role-stack ' + (layout === 'column' ? 'roles-col' : 'roles-row');
+}
+async function queryPublicProfiles(fields, apply){
+  let r = await apply(sbClient.from('public_profiles').select(fields + ', depts'));
+  if(r.error && /depts/i.test(r.error.message || '')) r = await apply(sbClient.from('public_profiles').select(fields));
+  return r;
+}
+
 /* ===================== НИК: цвет роли + эффекты профиля ===================== */
 const FX_CLASSES = ['fx-glow','fx-gradient','fx-shuffle'];
 function runShuffle(el, text){
@@ -1625,6 +1673,10 @@ document.querySelectorAll('#avatarShape button').forEach(b=>b.addEventListener('
 document.getElementById('tRing').addEventListener('change', e=>{ state.profile.ring = e.target.checked; updatePreview(); schedulePersistProfile(); });
 document.getElementById('tTilt').addEventListener('change', e=>{ state.profile.tilt = e.target.checked; schedulePersistProfile(); });
 document.getElementById('tCrown').addEventListener('change', e=>{ state.profile.crown = e.target.checked; updatePreview(); schedulePersistProfile(); });
+document.querySelectorAll('#rolesLayoutSeg button').forEach(b=>b.addEventListener('click', ()=>{
+  document.querySelectorAll('#rolesLayoutSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  state.profile.rolesLayout = b.dataset.layout; updatePreview(); schedulePersistProfile();
+}));
 
 document.getElementById('avatarBtn').addEventListener('click', ()=>document.getElementById('avatarInput').click());
 document.getElementById('avatarInput').addEventListener('change', async e=>{
@@ -1682,7 +1734,8 @@ function updatePreviewLook(){
 }
 function updatePreview(){
   document.getElementById('previewName').textContent = state.profile.name || 'Ваше имя';
-  renderRoleBadge(document.getElementById('previewRoleBadge'), state.profile.role);
+  renderRoleStack(document.getElementById('previewRoles'), state.profile.role, state.profile.depts, state.profile.rolesLayout);
+  document.getElementById('previewNameRow').classList.toggle('col', state.profile.rolesLayout === 'column');
   document.getElementById('previewHandle').textContent = state.profile.handle ? '@'+state.profile.handle.replace('@','') : '@username';
   document.getElementById('previewBio').textContent = state.profile.bio || 'Пара строк о себе появится здесь.';
   document.getElementById('previewLoc').textContent = '📍 ' + (state.profile.loc || '—');
@@ -1695,9 +1748,9 @@ function updatePreview(){
   if(state.profile.avatar) av.innerHTML = `<img src="${state.profile.avatar}">`;
   else av.innerHTML = `<span>${(state.profile.name||'A')[0].toUpperCase()}</span>`;
 
-  applyNameFx(document.getElementById('previewName'), state.profile.nameFx, state.profile.role, state.profile.name || 'Ваше имя');
+  applyNameFx(document.getElementById('previewName'), state.profile.nameFx, nickRole(state.profile.role, state.profile.depts), state.profile.name || 'Ваше имя');
   const hdrNick = document.querySelector('#openAuthBtn .nick');
-  if(hdrNick && currentUser) applyNameFx(hdrNick, state.profile.nameFx, state.profile.role, currentUser.name);
+  if(hdrNick && currentUser) applyNameFx(hdrNick, state.profile.nameFx, nickRole(state.profile.role, state.profile.depts), currentUser.name);
 
   document.getElementById('previewSocials').innerHTML = state.profile.links.filter(l=>l.url).map(l=>`<a href="${l.url}" target="_blank" rel="noopener" title="${l.type}">${socialIcons[l.type]||'🔗'}</a>`).join('') || '<span style="font-size:11px;color:var(--faint)">Ссылок пока нет</span>';
 
@@ -1785,59 +1838,73 @@ function startBgEffect(type){
 }
 
 /* ===================== УПРАВЛЕНИЕ РОЛЯМИ (форма для владельца и помощника) ===================== */
-const ROLE_ORDER = ['user','monkey','helper','moder','app','gmoder','howner','owner'];
+const MAIN_ROLES = ['user','monkey','helper','moder','howner','owner'];
+const DEPT_ROLES = ['app','gmoder'];
+const UUID_FIND_RE = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
 const ROLE_NAMES_FORM = Object.assign({}, ROLE_LABELS, { user:'Без роли' });
-let rolesPicked = null, rolesChosen = null, rolesSearchTimer = null;
+let rolesPicked = null, rolesChosen = null, deptsChosen = new Set(), rolesSearchTimer = null;
 function canManageRoles(){ const r = state.profile && state.profile.role; return !!currentUser && (r === 'owner' || r === 'howner'); }
+function roleOptHtml(r, on, locked, attr){
+  return `<button type="button" class="role-opt ${on?'on':''}" data-role="${r}" ${attr}="${r}" ${locked?'disabled title="Только Генерал"':''}><span class="sw"></span>${escapeHtmlClient(ROLE_NAMES_FORM[r])}</button>`;
+}
 function renderRolesGrid(){
   const iAmOwner = state.profile.role === 'owner';
-  document.getElementById('rolesGrid').innerHTML = ROLE_ORDER.map(r=>{
-    const locked = !iAmOwner && (r === 'howner' || r === 'owner');
-    return `<button type="button" class="role-opt ${rolesChosen===r?'on':''}" data-role="${r}" data-pick="${r}" ${locked?'disabled title="Только Генерал"':''}><span class="sw"></span>${escapeHtmlClient(ROLE_NAMES_FORM[r])}</button>`;
-  }).join('');
+  document.getElementById('rolesGrid').innerHTML = MAIN_ROLES.map(r=>roleOptHtml(r, rolesChosen===r, !iAmOwner && (r==='howner'||r==='owner'), 'data-pick')).join('');
+  document.getElementById('deptsGrid').innerHTML = DEPT_ROLES.map(r=>roleOptHtml(r, deptsChosen.has(r), false, 'data-dept')).join('');
   document.querySelectorAll('#rolesGrid [data-pick]').forEach(b=>b.addEventListener('click', ()=>{
-    if(b.disabled) return;
-    rolesChosen = b.dataset.pick; renderRolesGrid(); updateRolesApply();
+    if(b.disabled) return; rolesChosen = b.dataset.pick; renderRolesGrid(); updateRolesApply();
+  }));
+  document.querySelectorAll('#deptsGrid [data-dept]').forEach(b=>b.addEventListener('click', ()=>{
+    const d = b.dataset.dept; if(deptsChosen.has(d)) deptsChosen.delete(d); else deptsChosen.add(d);
+    renderRolesGrid(); updateRolesApply();
   }));
 }
-function updateRolesApply(){
-  const btn = document.getElementById('rolesApply');
-  btn.disabled = !(rolesPicked && rolesChosen);
-}
+function updateRolesApply(){ document.getElementById('rolesApply').disabled = !rolesPicked; }
 function renderRolesPicked(){
   const box = document.getElementById('rolesPicked');
   if(!rolesPicked){ box.style.display = 'none'; return; }
-  const label = ROLE_LABELS[rolesPicked.role];
+  const nr = nickRole(rolesPicked.role, rolesPicked.depts);
+  const name = rolesPicked.display_name || ('UUID ' + rolesPicked.id.slice(0, 8) + '…');
+  const badges = roleBadgesHtml(rolesPicked.role, rolesPicked.depts);
   box.style.display = 'flex';
-  box.innerHTML = `<span>Выбран:</span><b class="role-name" ${label ? `data-role="${rolesPicked.role}"` : ''}>${escapeHtmlClient(rolesPicked.display_name || 'Без имени')}</b>${label ? `<span class="role-badge role-${rolesPicked.role}">${label}</span>` : '<span style="color:var(--faint);">без роли</span>'}`;
+  box.innerHTML = `<span>Выбран:</span><b class="role-name" ${nr ? `data-role="${nr}"` : ''}>${escapeHtmlClient(name)}</b>${badges || '<span style="color:var(--faint);">без роли</span>'}${rolesPicked.fresh ? '<span style="color:var(--faint); font-size:12px; width:100%;">Профиль ещё не создан — он создастся автоматически при выдаче роли.</span>' : ''}`;
+}
+function pickRolesTarget(u){
+  rolesPicked = u;
+  rolesChosen = MAIN_ROLES.includes(u.role) ? u.role : 'user';
+  deptsChosen = new Set([...(Array.isArray(u.depts) ? u.depts : []), ...(DEPT_ROLES.includes(u.role) ? [u.role] : [])]);
+  renderRolesPicked(); renderRolesGrid(); updateRolesApply();
+}
+/* UUID вставили — выбираем сразу, не дожидаясь поиска: у только что зарегистрированного профиля может не быть имени/строки */
+async function pickByUuid(id){
+  document.getElementById('rolesResults').innerHTML = '';
+  pickRolesTarget({ id, display_name:null, role:'user', depts:[], fresh:true });
+  if(!sbClient) return;
+  try{
+    const { data } = await queryPublicProfiles('id, display_name, handle, avatar_url, role', qb=>qb.eq('id', id).limit(1));
+    if(data && data[0] && rolesPicked && rolesPicked.id === id) pickRolesTarget(data[0]);
+  }catch(e){ console.warn(e); }
 }
 async function searchRolesUsers(raw){
   const box = document.getElementById('rolesResults');
   if(!sbClient){ box.innerHTML = '<div class="user-search-hint">Сервис недоступен</div>'; return; }
-  const uuidRe = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-  let query = sbClient.from('public_profiles').select('id, display_name, handle, avatar_url, role');
-  if(uuidRe.test(raw)) query = query.eq('id', raw);
-  else {
-    const q = raw.replace(/^@/, '').replace(/[%,()*\\]/g, ' ').trim();
-    if(q.length < 2){ box.innerHTML = ''; return; }
-    query = query.or(`display_name.ilike.%${q}%,handle.ilike.%${q}%`);
-  }
-  const { data, error } = await query.limit(8);
+  const q = raw.replace(/^@/, '').replace(/[%,()*\\]/g, ' ').trim();
+  if(q.length < 2){ box.innerHTML = ''; return; }
+  const { data, error } = await queryPublicProfiles('id, display_name, handle, avatar_url, role',
+    qb => qb.or(`display_name.ilike.%${q}%,handle.ilike.%${q}%`).limit(8));
   if(error){ box.innerHTML = '<div class="user-search-hint">Не удалось выполнить поиск</div>'; return; }
-  if(!data || !data.length){ box.innerHTML = '<div class="user-search-hint">Никого не нашли</div>'; return; }
+  if(!data || !data.length){ box.innerHTML = '<div class="user-search-hint">Никого не нашли. Если человек только что зарегистрировался — вставьте его UUID.</div>'; return; }
   box.innerHTML = data.map((u,i)=>{
     const name = escapeHtmlClient(u.display_name || 'Без имени');
     const av = u.avatar_url ? `<img src="${escapeHtmlClient(u.avatar_url)}" alt="">` : `<span class="ur-ph">${name[0].toUpperCase()}</span>`;
-    const label = ROLE_LABELS[u.role];
-    return `<div class="roles-user" data-i="${i}">${av}<div style="flex:1; min-width:0;"><span class="role-name" ${label?`data-role="${u.role}"`:''}>${name}</span>${u.handle ? ` <span style="color:var(--faint); font-size:12px;">@${escapeHtmlClient(u.handle)}</span>` : ''}</div>${label ? `<span class="role-badge role-${u.role}">${label}</span>` : ''}</div>`;
+    const nr = nickRole(u.role, u.depts);
+    return `<div class="roles-user" data-i="${i}">${av}<div style="flex:1; min-width:0;"><span class="role-name" ${nr?`data-role="${nr}"`:''}>${name}</span>${u.handle ? ` <span style="color:var(--faint); font-size:12px;">@${escapeHtmlClient(u.handle)}</span>` : ''}</div>${roleBadgesHtml(u.role, u.depts)}</div>`;
   }).join('');
-  box.querySelectorAll('.roles-user').forEach(el=>el.addEventListener('click', ()=>{
-    rolesPicked = data[+el.dataset.i]; renderRolesPicked(); updateRolesApply();
-  }));
+  box.querySelectorAll('.roles-user').forEach(el=>el.addEventListener('click', ()=>pickRolesTarget(data[+el.dataset.i])));
 }
 function openRolesModal(){
   if(!canManageRoles()) return;
-  rolesPicked = null; rolesChosen = null;
+  rolesPicked = null; rolesChosen = null; deptsChosen = new Set();
   document.getElementById('rolesSearch').value = '';
   document.getElementById('rolesResults').innerHTML = '';
   document.getElementById('rolesNote').textContent = '';
@@ -1849,12 +1916,14 @@ document.getElementById('rolesSearch').addEventListener('input', e=>{
   clearTimeout(rolesSearchTimer);
   const v = e.target.value.trim();
   if(!v){ document.getElementById('rolesResults').innerHTML = ''; return; }
+  const m = v.match(UUID_FIND_RE);           // UUID находим где угодно в вставленном тексте
+  if(m){ pickByUuid(m[0].toLowerCase()); return; }
   rolesSearchTimer = setTimeout(()=>searchRolesUsers(v), 300);
 });
 document.getElementById('rolesApply').addEventListener('click', async ()=>{
   const btn = document.getElementById('rolesApply');
   const note = document.getElementById('rolesNote');
-  if(!rolesPicked || !rolesChosen) return;
+  if(!rolesPicked) return;
   btn.disabled = true; note.textContent = 'Применяем…';
   try{
     const { data } = await sbClient.auth.getSession();
@@ -1862,14 +1931,17 @@ document.getElementById('rolesApply').addEventListener('click', async ()=>{
     if(!token) throw new Error('Войдите в аккаунт заново');
     const res = await fetch(REPORT_ENDPOINT + '/admin/role', {
       method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ access_token: token, target_id: rolesPicked.id, role: rolesChosen })
+      body: JSON.stringify({ access_token: token, target_id: rolesPicked.id, role: rolesChosen || 'user', depts: [...deptsChosen] })
     });
     const out = await res.json().catch(()=>({}));
     if(!res.ok || !out.ok) throw new Error(out.message || 'Не удалось выдать роль');
-    rolesPicked.role = rolesChosen;
+    rolesPicked.role = rolesChosen || 'user';
+    rolesPicked.depts = [...deptsChosen];
+    rolesPicked.fresh = false;
+    if(out.display_name) rolesPicked.display_name = out.display_name;
     renderRolesPicked();
     note.textContent = out.message || 'Готово';
-    showToast(out.message || 'Роль выдана');
+    showToast(out.message || 'Роли обновлены');
   }catch(e){
     note.textContent = '⚠️ ' + (e.message || e);
   }finally{

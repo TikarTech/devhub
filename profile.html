@@ -156,6 +156,28 @@ html[data-theme="day"] .role-badge{--rt-target:#fff;}
 .profile-status{font-size:13.5px; color:var(--muted); font-style:italic; margin-top:6px; word-break:break-word;}
 .profile-avatar.vip-ring{position:relative;}
 .profile-avatar.vip-ring::after{content:""; position:absolute; inset:0; padding:3px; border-radius:inherit; background:linear-gradient(135deg, var(--v1), var(--v2)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; z-index:2;}
+
+/* ---- значки-картинки с запасным глифом ---- */
+.ico-wrap{display:inline-flex; align-items:center; justify-content:center; line-height:1;}
+.ico-wrap .ico-img{display:none; width:100%; height:100%; object-fit:contain;}
+.ico-wrap.has-img .ico-img{display:block;}
+.ico-wrap.has-img .glyph{display:none;}
+.vf-check .ico-wrap, .staff-mark .ico-wrap{width:100%; height:100%;}
+.vf-check:has(.has-img), .staff-mark:has(.has-img){background:transparent !important; box-shadow:none !important;}
+.user-badge .ico-wrap{min-width:14px; height:14px; margin-right:4px; vertical-align:-2px;}
+.user-badge .ico-wrap.has-img{width:14px;}
+.role-badge .ico-wrap{display:none;}
+.role-badge .ico-wrap.has-img{display:inline-flex; width:12px; height:12px; margin-right:4px; vertical-align:-2px;}
+.tool-icon .gen-ico, .gen-ico{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:1.05em; border-radius:inherit; text-shadow:0 1px 2px rgba(0,0,0,.35);}
+/* ---- анимированный градиентный фон ---- */
+#gradBg{position:absolute; inset:0; overflow:hidden;}
+#gradBg .gr-base{position:absolute; inset:0; background-size:320% 320%; animation:gradMove var(--gd,16s) ease-in-out infinite;}
+#gradBg .gr-blob{position:absolute; width:60vmax; height:60vmax; border-radius:50%; filter:blur(50px); opacity:.5; animation:gradFloat calc(var(--gd,16s) * 1.2) ease-in-out infinite alternate;}
+#gradBg .gr-blob.b2{animation-direction:alternate-reverse;}
+@keyframes gradMove{0%,100%{background-position:0% 50%;} 50%{background-position:100% 50%;}}
+@keyframes gradFloat{from{transform:translate(-8%,-6%) scale(1);} to{transform:translate(18%,14%) scale(1.15);}}
+@media (prefers-reduced-motion:reduce){ #gradBg .gr-base,#gradBg .gr-blob{animation:none;} }
+.bg-opt .thumb.grad{background:linear-gradient(135deg,#6d5df6,#ff7cc8); opacity:1;}
 </style>
 </head>
 <body>
@@ -192,6 +214,45 @@ try{
   if(savedSettings?.theme) document.documentElement.setAttribute('data-theme', savedSettings.theme);
 }catch(e){}
 
+/* ===================== ЗНАЧКИ: свой файл у каждого значка, пока файла нет — запасной глиф ===================== */
+/* Файлы кладите в бакет assets, папка icons/: verified.png, vip.png, staff-owner.png, staff-howner.png,
+   badge-active.png, badge-author.png, badge-supporter.png, role-monkey.png, role-helper.png, role-moder.png,
+   role-app.png, role-gmoder.png, role-howner.png, role-owner.png  (PNG/WebP с прозрачным фоном, ~64×64) */
+var ICON_BASE = SUPABASE_URL + '/storage/v1/object/public/assets/icons/';
+function icoHtml(file, glyph){
+  return `<span class="ico-wrap"><img class="ico-img" src="${ICON_BASE}${encodeURIComponent(file)}.png" alt="" loading="lazy" onload="this.parentNode.classList.add('has-img')" onerror="this.remove()"><span class="glyph">${glyph}</span></span>`;
+}
+/* ---- значок приложения: своя картинка -> эмодзи из каталога -> уникальный сгенерированный значок ---- */
+function genIconHtml(name){
+  const s = String(name || '?').trim(); let h = 0;
+  for(let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  const hue = h % 360, ch = escapeHtml((s.match(/[A-Za-zА-Яа-яЁё0-9]/) || ['?'])[0].toUpperCase());
+  return `<span class="gen-ico" style="background:linear-gradient(135deg,hsl(${hue} 70% 56%),hsl(${(hue + 45) % 360} 72% 42%));">${ch}</span>`;
+}
+function appIconHtml(name, emoji, url){
+  const gen = genIconHtml(name);
+  if(url && /^https:\/\//.test(url)){
+    return `<img src="${escapeHtml(url)}" alt="" loading="lazy" onerror="this.outerHTML=this.dataset.fb" data-fb="${escapeHtml(gen)}">`;
+  }
+  const generic = ['', '📦', '📱', '🔧'];
+  return (emoji && !generic.includes(String(emoji).trim())) ? escapeHtml(emoji) : gen;
+}
+/* ---- анимированный градиентный фон (доступен всем) ---- */
+var GRAD_DEFAULTS = ['#6D5DF6', '#FF7CC8'];
+function buildGradLayer(c1, c2, speed){
+  const ok = v => /^#[0-9a-fA-F]{6}$/.test(v || '');
+  const a = ok(c1) ? c1 : GRAD_DEFAULTS[0], b = ok(c2) ? c2 : GRAD_DEFAULTS[1];
+  const dur = ({ slow:'30s', normal:'16s', fast:'8s' })[speed] || '16s';
+  const wrap = document.createElement('div'); wrap.id = 'gradBg'; wrap.style.setProperty('--gd', dur);
+  const base = document.createElement('div'); base.className = 'gr-base';
+  base.style.backgroundImage = `linear-gradient(125deg, ${a} 0%, ${b} 30%, ${mixHex(a, b, .5)} 55%, ${mixHex(b, '#ffffff', .18)} 78%, ${a} 100%)`;
+  const b1 = document.createElement('div'); b1.className = 'gr-blob'; b1.style.background = `radial-gradient(circle, ${mixHex(a, '#ffffff', .35)}, transparent 65%)`; b1.style.left = '-10%'; b1.style.top = '-15%';
+  const b2 = document.createElement('div'); b2.className = 'gr-blob b2'; b2.style.background = `radial-gradient(circle, ${mixHex(b, '#ffffff', .3)}, transparent 65%)`; b2.style.right = '-12%'; b2.style.bottom = '-18%';
+  wrap.appendChild(base); wrap.appendChild(b1); wrap.appendChild(b2);
+  return wrap;
+}
+var GRAD_PRESETS = [['Закат','#FF512F','#F09819'],['Океан','#2193B0','#6DD5ED'],['Неон','#FF00CC','#3333FF'],['Аврора','#00C9FF','#92FE9D'],['Огонь','#F12711','#F5AF19'],['Мята','#11998E','#38EF7D'],['Ночь','#0F2027','#2C5364'],['Сирень','#8E2DE2','#4A00E0']];
+
 /* ---- администрация и металлический фон ---- */
 function isStaffRole(role){ return role === 'owner' || role === 'howner'; }
 const STAFF_TITLES = { owner:'Генерал — владелец проекта', howner:'Помощник генерала — администратор' };
@@ -226,7 +287,7 @@ function nickRole(role, depts, primary){
   return l.slice().sort((a,b)=>(ROLE_RANK_CLIENT[b]||0)-(ROLE_RANK_CLIENT[a]||0))[0] || null;
 }
 function roleBadgesHtml(role, depts, primary){
-  return allRoles(role, depts, primary).map(r=>`<span class="role-badge role-${r}">${ROLE_LABELS[r]}</span>`).join('');
+  return allRoles(role, depts, primary).map(r=>`<span class="role-badge role-${r}">${icoHtml('role-' + r, '')}${ROLE_LABELS[r]}</span>`).join('');
 }
 
 /* ===================== VIP: градиент ника и рамки, корона ===================== */
@@ -291,7 +352,7 @@ function applyNameFx(el, fx, role, text, grad){
   if(grad) el.classList.add('fx-gradient');
 }
 
-const BADGE_LABELS = { active:'⚡ Активный', author:'✍️ Автор', supporter:'⭐ Поддержал' };
+const BADGE_DEFS = { active:['⚡','Активный'], author:['✍️','Автор'], supporter:['⭐','Поддержал'] };
 const BG_PRESETS = { sakura:'bg/sakura.mp4', mountain_clouds:'bg/mountain_clouds.mp4', stars:'bg/stars.mp4', space:'bg/space.mp4', russia:'bg/russia.mp4' };
 const TRACK_PRESETS = {
   t1:{name:'1,5', file:'music/1-5.mp3'},
@@ -387,7 +448,7 @@ function renderNotFound(){
 
 function appRowHTML(app){
   return `<div class="app-row card glass">
-    <div class="tool-icon">${app.icon_url ? `<img src="${escapeHtml(app.icon_url)}" alt="" loading="lazy">` : (app.icon || '📦')}</div>
+    <div class="tool-icon">${appIconHtml(app.name, app.icon, app.icon_url)}</div>
     <div class="app-meta">
       <div class="app-name">${escapeHtml(app.name)}</div>
       <div class="app-desc">${escapeHtml(app.description || '')}</div>
@@ -444,6 +505,12 @@ function applyOwnerBackground(profile, c){
   if(!profile.bg_url && profile.bg_preset === 'gold' && (profile.vip || isStaffRole(profile.role))){
     layer.appendChild(buildGoldLayer((profile.customization || {}).vipBgColor));
     document.getElementById('bgDim').style.opacity = ((c.dim ?? 72) / 100) * .5;
+    return;
+  }
+  // анимированный градиент (доступен всем): рисуется кодом, а не картинкой
+  if(!profile.bg_url && profile.bg_preset === 'gradient'){
+    layer.appendChild(buildGradLayer(c.bgGradC1, c.bgGradC2, c.bgGradSpeed));
+    document.getElementById('bgDim').style.opacity = ((c.dim ?? 72) / 100) * .6;
     return;
   }
   if(profile.bg_url){ src = profile.bg_url; isImage = profile.bg_type === 'image'; }
@@ -557,10 +624,10 @@ async function renderProfile(userId){
   const rolesLayout = pc.rolesLayout === 'row' ? 'row' : 'column';   // по умолчанию — столбиком
   const rolesHtml = roleBadgesHtml(profile.role, profile.depts, pc.primaryRole);
   const roleBg = Number.isFinite(pc.roleBgOpacity) ? pc.roleBgOpacity : 15;
-  const staffBadge = isStaffRole(profile.role) ? `<span class="user-badge staff-badge staff-${profile.role}">🛡 ${profile.role === 'owner' ? 'Владелец проекта' : 'Администрация'}</span>` : '';
-  const vipBadge = staffBadge + (profile.vip ? '<span class="user-badge vip-badge">💎 VIP</span>' : '');
+  const staffBadge = isStaffRole(profile.role) ? `<span class="user-badge staff-badge staff-${profile.role}">${icoHtml('staff-' + profile.role, '🛡')}${profile.role === 'owner' ? 'Владелец проекта' : 'Администрация'}</span>` : '';
+  const vipBadge = staffBadge + (profile.vip ? `<span class="user-badge vip-badge">${icoHtml('vip','💎')}VIP</span>` : '');
   const badgesHtml = vipBadge + (Array.isArray(profile.badges) ? profile.badges : [])
-    .filter(b=>BADGE_LABELS[b]).map(b=>`<span class="user-badge">${BADGE_LABELS[b]}</span>`).join('');
+    .filter(b=>BADGE_DEFS[b]).map(b=>`<span class="user-badge">${icoHtml('badge-' + b, BADGE_DEFS[b][0])}${BADGE_DEFS[b][1]}</span>`).join('');
 
   const appsHtml = (apps && apps.length)
     ? apps.map(appRowHTML).join('')
@@ -570,7 +637,7 @@ async function renderProfile(userId){
     <div class="profile-hero card glass">
       <div class="avatar-wrap" id="profAvatarWrap"><div class="vip-crown" id="profCrown" style="display:none;"></div><div class="profile-avatar">${avatarHtml}</div></div>
       <div class="profile-namerow ${rolesLayout === 'column' ? 'col' : ''}">
-        <span class="profile-name" id="profNick"></span>${profile.verified ? '<span class="vf-check" title="Подтверждённый аккаунт">✔</span>' : ''}${isStaffRole(profile.role) ? `<span class="staff-mark staff-${profile.role}" title="${STAFF_TITLES[profile.role]}">🛡</span>` : ''}
+        <span class="profile-name" id="profNick"></span>${profile.verified ? `<span class="vf-check" title="Подтверждённый аккаунт">${icoHtml('verified','✔')}</span>` : ''}${isStaffRole(profile.role) ? `<span class="staff-mark staff-${profile.role}" title="${STAFF_TITLES[profile.role]}">${icoHtml('staff-' + profile.role, '🛡')}</span>` : ''}
         ${rolesHtml ? `<span class="role-stack ${rolesLayout === 'column' ? 'roles-col' : 'roles-row'}" style="--rb:${roleBg}%;">${rolesHtml}</span>` : ''}
       </div>
       ${profile.handle ? `<div class="profile-handle">@${escapeHtml(profile.handle)}</div>` : ''}
@@ -622,6 +689,558 @@ if(userId){
 } else {
   renderNotFound();
 }
+</script>
+<script>
+/* ===================== I18N: русский / English (общий для всех страниц) ===================== */
+const I18N_EN = {
+"🏠 Главная": "🏠 Home",
+"📱 Каталог": "📱 Catalog",
+"📝 Заявки": "📝 Requests",
+"👤 Профиль": "👤 Profile",
+"🔔 Уведомления": "🔔 Notifications",
+"Главная": "Home",
+"Каталог": "Catalog",
+"Заявки": "Requests",
+"Профиль": "Profile",
+"Уведомления": "Notifications",
+"Навигация": "Navigation",
+"Разделы": "Sections",
+"Внешний вид": "Appearance",
+"🎨 Внешний вид": "🎨 Appearance",
+"🚪 Выйти из аккаунта": "🚪 Log out",
+"Выйти из аккаунта": "Log out",
+"Выйти": "Log out",
+"Войти": "Log in",
+"📊 Админ-панель": "📊 Admin panel",
+"🛡 Управление ролями": "🛡 Manage roles",
+"Управление ролями": "Manage roles",
+"⭐ Поддержать": "⭐ Support",
+"⭐ Поддержать проект": "⭐ Support the project",
+"Меню": "Menu",
+"Закрыть": "Close",
+"Язык": "Language",
+"Часовой пояс": "Time zone",
+"Найти приложение…": "Find an app…",
+"GMT+0 Лондон": "GMT+0 London",
+"GMT+1 Берлин": "GMT+1 Berlin",
+"GMT+3 МСК": "GMT+3 Moscow",
+"GMT+5 Алматы": "GMT+5 Almaty",
+"GMT+7 Новосибирск": "GMT+7 Novosibirsk",
+"DevHub — Android каталог инструментов": "DevHub — Android tools catalog",
+"Профиль — DevHub": "Profile — DevHub",
+"Поддержать — DevHub": "Support — DevHub",
+"© 2026 DevHub. Все права защищены.": "© 2026 DevHub. All rights reserved.",
+"Android-инструменты для": "Android tools for",
+"разработчиков": "developers",
+"в одном каталоге": "in one catalog",
+"Каталог Android-приложений": "Android app catalog",
+"Каталог Android-приложений для разработчиков с гибкой персонализацией профиля.": "An Android app catalog for developers with flexible profile customization.",
+"Проверенные APK, версии под разные архитектуры и ссылки на VirusTotal — без лишнего шума.": "Verified APKs, builds for different architectures and VirusTotal links — no noise.",
+"Весь каталог →": "Full catalog →",
+"Популярное": "Popular",
+"Чаще всего скачивают на этой неделе": "Most downloaded this week",
+"✦ Загрузка каталога…": "✦ Loading catalog…",
+"Исходный код (GitHub)": "Source code (GitHub)",
+"🐙 GitHub / Исходный код": "🐙 GitHub / Source code",
+"Скачать": "Download",
+"В каталоге": "In catalog",
+"Платформа": "Platform",
+"Устройство": "Device",
+"Сеть": "Network",
+"Разработка": "Development",
+"Базы данных": "Databases",
+"Аудио": "Audio",
+"Все": "All",
+"Найти": "Search",
+"Аккаунт": "Account",
+"Вход": "Sign in",
+"Регистрация": "Sign up",
+"Создать аккаунт": "Create account",
+"Пароль": "Password",
+"Ваше имя": "Your name",
+"Имя": "Name",
+"Ваш ник": "Your nick",
+"Аккаунт защищён Supabase Auth — данные хранятся на сервере, не в браузере.": "The account is protected by Supabase Auth — data is stored on the server, not in the browser.",
+"Где сохранять настройки": "Where to save settings",
+"Загрузка…": "Loading…",
+"Загружаем…": "Loading…",
+"Загружаем профиль…": "Loading profile…",
+"нужен вход": "login required",
+"Настройки": "Settings",
+"Основная информация": "Basic info",
+"Заполняете вы сами — эти поля видят посетители страницы.": "You fill these in yourself — visitors of your page see them.",
+"Пара строк о себе": "A few lines about you",
+"Пара строк о себе появится здесь.": "A few lines about you will appear here.",
+"Город, страна": "City, country",
+"Описание": "Description",
+"Пользователь": "User",
+"Социальные ссылки": "Social links",
+"Ссылки": "Links",
+"+ Добавить ссылку": "+ Add link",
+"До 6 ссылок — покажутся иконками в превью.": "Up to 6 links — shown as icons in the preview. VIP: up to 12.",
+"Ссылок пока нет": "No links yet",
+"Загрузить аватар": "Upload avatar",
+"Сохранить": "Save",
+"Сохранить профиль": "Save profile",
+"Изменения видно в превью сразу": "Changes show in the preview instantly",
+"Статистика": "Statistics",
+"Считается автоматически по действиям на сайте, но начальные числа можно задать вручную.": "Counted automatically from your actions on the site, but you can set starting numbers manually.",
+"Скачиваний приложений (стартовое число)": "App downloads (starting number)",
+"Предложений автору в Telegram (стартовое число)": "Suggestions to the author in Telegram (starting number)",
+"Каждая заявка во вкладке «Заявки» и каждая загрузка в «Каталоге» увеличивают счётчики автоматически.": "Every request in “Requests” and every download in “Catalog” raises the counters automatically.",
+"Фон": "Background",
+"Фоновое видео": "Background video",
+"Выберите один из ваших роликов или загрузите свой.": "Pick one of your clips or upload your own.",
+"Загрузить свой фон": "Upload your background",
+"Затемнение фона": "Background dimming",
+"Блюр фона": "Background blur",
+"Эффект поверх фона": "Overlay effect",
+"Эффекты": "Effects",
+"Музыка": "Music",
+"Играет в мини-плеере. Можно загрузить свой трек.": "Plays in the mini player. You can upload your own track.",
+"Загрузить свой трек": "Upload your track",
+"Начинать трек сразу": "Start the track immediately",
+"Автовоспроизведение": "Autoplay",
+"Громкость по умолчанию": "Default volume",
+"Без музыки": "No music",
+"Мой трек": "My track",
+"Свой трек": "Custom track",
+"Тема «Россия» автоматически включает фон russia.mp4 и трек russia.mp3.": "The “Russia” theme automatically enables the russia.mp4 background and the russia.mp3 track.",
+"Эффекты имени": "Name effects",
+"Применяются к имени в превью.": "Applied to the name in the preview.",
+"Градиент ника": "Nick gradient",
+"В цвет акцента темы": "Theme accent color",
+"Вместо цвета роли": "Instead of the role color",
+"Форма аватара": "Avatar shape",
+"Круг": "Circle",
+"Квадрат": "Square",
+"Скругл.": "Rounded",
+"Скругление углов": "Corner radius",
+"Кольцо вокруг аватара": "Ring around the avatar",
+"Вокруг карточки профиля": "Around the profile card",
+"Карточка слегка наклоняется за курсором": "The card tilts slightly with the cursor",
+"Прозрачность карточки": "Card opacity",
+"Прозрачность и форма": "Opacity and shape",
+"Как выглядит карточка профиля поверх фона.": "How the profile card looks over the background.",
+"Вид": "View",
+"Страница": "Page",
+"Основная роль": "Primary role",
+"Отделы (можно несколько, не заменяют роль)": "Departments (several allowed, they do not replace the role)",
+"Отображение ролей": "Role display",
+"Горизонтально": "Horizontal",
+"Вертикально": "Vertical",
+"Горизонтально — рядом с ником. Вертикально — столбиком под ником. Видно в вашем профиле.": "Horizontal — next to the nick. Vertical — in a column under the nick. Visible in your profile.",
+"Прозрачность фона роли:": "Role background opacity:",
+"0% — только текст и рамка, 100% — сплошная плашка.": "0% — text and border only, 100% — solid badge.",
+"Этa роль показывается первой и задаёт цвет ника.": "This role is shown first and sets the nick color.",
+"Эта роль показывается первой и задаёт цвет ника.": "This role is shown first and sets the nick color.",
+"У вас одна роль — выбирать нечего.": "You have only one role — nothing to choose.",
+"У вас пока нет ролей.": "You have no roles yet.",
+"(по умолчанию, столбиком)": "(default, column)",
+"Без роли": "No role",
+"без роли": "no role",
+"💎 Значок VIP в профиле": "💎 VIP badge in your profile",
+"Градиент ника и рамки": "Nick and frame gradient",
+"🎨 Градиент из двух любых цветов — цвет вашего ника": "🎨 A gradient of any two colors — your nick color",
+"Градиентная рамка профиля": "Gradient profile frame",
+"🖼 Та же градиентная рамка вокруг карточки профиля": "🖼 The same gradient frame around the profile card",
+"Корона над аватаркой": "Crown above the avatar",
+"👑 Корона над аватаркой (можно загрузить свою — от 15 дней VIP)": "👑 Crown above the avatar (you can upload your own — with 15+ days of VIP)",
+"💬 Статус под ником, анимация градиента, кольцо аватара, до 12 ссылок": "💬 Status under the nick, gradient animation, avatar ring, up to 12 links",
+"✨ Металлический фон сайта (по умолчанию золото) любого цвета": "✨ Metallic site background (gold by default) in any color",
+"⚡ Ваши заявки модераторы видят в очереди первыми": "⚡ Moderators see your requests first in the queue",
+"🛡 Администрация получает все VIP-функции автоматически, пока в роли": "🛡 Staff get all VIP features automatically while in the role",
+"Анимация градиента ника": "Nick gradient animation",
+"Выключена": "Off",
+"Медленно": "Slow",
+"Обычно": "Normal",
+"Быстро": "Fast",
+"Статус под ником": "Status under the nick",
+"Например: открыт для заказов": "For example: open for orders",
+"Градиентное кольцо аватара": "Gradient avatar ring",
+"Тех же двух цветов, что у ника": "The same two colors as the nick",
+"👑 Своя корона": "👑 Custom crown",
+"Загрузить картинку": "Upload image",
+"Вернуть стандартную": "Restore default",
+"Картинка приведётся к PNG 128×128. Новую корону сразу видят модераторы и могут её убрать.": "The image will be converted to a 128×128 PNG. Moderators see a new crown right away and can remove it.",
+"✨ Металлический фон сайта": "✨ Metallic site background",
+"Включить фон": "Enable background",
+"Выключить": "Turn off",
+"Мягкий металлический блеск выбранного цвета. По умолчанию — золото. То же можно выбрать в «Фон» → 💎 Gold.": "A soft metallic shine in the chosen color. Gold by default. You can also choose it in “Background” → 💎 Gold.",
+"Только для VIP": "VIP only",
+"Навсегда": "Forever",
+"+30 дней": "+30 days",
+"+90 дней": "+90 days",
+"Снять VIP": "Remove VIP",
+"Не менять": "No change",
+"Срок продлевается донатом: каждые 100 ⭐ = 30 дней VIP.": "Extended by donating: every 100 ⭐ = 30 days of VIP.",
+"VIP не активен.": "VIP is not active.",
+"VIP активен — навсегда.": "VIP is active — forever.",
+"VIP-функции включены автоматически — вы в администрации.": "VIP features are enabled automatically — you are on the staff.",
+"Для администрации — без ограничения по сроку VIP.": "For staff — no VIP term limit.",
+"Своя корона доступна при активном VIP.": "A custom crown requires active VIP.",
+"Нужен VIP, до конца которого осталось не меньше": "Needs VIP with at least",
+"дней (сейчас меньше).": "days left (currently fewer).",
+"дней.": "days.",
+"Доступно: до конца VIP больше": "Available: more than",
+"💎 Только для VIP": "💎 VIP only",
+"💎 Этот фон доступен только VIP": "💎 This background is VIP only",
+"👑 Корона установлена": "👑 Crown set",
+"Стандартная корона возвращена": "Default crown restored",
+"Загружаем корону…": "Uploading crown…",
+"Максимум 12 ссылок": "Maximum 12 links",
+"Максимум 6 ссылок (у VIP — 12)": "Maximum 6 links (12 for VIP)",
+"Золото": "Gold",
+"Розовое золото": "Rose gold",
+"Серебро": "Silver",
+"Медь": "Copper",
+"Изумруд": "Emerald",
+"Сапфир": "Sapphire",
+"Рубин": "Ruby",
+"Аметист": "Amethyst",
+"Добавить / удалить приложение или пожаловаться — заявка уходит модераторам DevHub": "Add / remove an app or file a complaint — the request goes to DevHub moderators",
+"Добавить": "Add",
+"Удалить": "Delete",
+"Жалоба": "Complaint",
+"Сообщить об ошибке": "Report an error",
+"Добавить приложение": "Add an app",
+"Удалить приложение": "Remove an app",
+"Название приложения": "App name",
+"Например, Acode": "For example, Acode",
+"Приложение": "App",
+"Ссылка (офиц. сайт / файл)": "Link (official site / file)",
+"https://github.com/user/repo — или «-», если исходников нет": "https://github.com/user/repo — or “-” if there is no source",
+"Иконка приложения (необязательно)": "App icon (optional)",
+"Выбрать картинку": "Choose image",
+"Убрать": "Remove",
+"PNG, JPG или WebP — обрежется до квадрата. Если заявку одобрят, она станет иконкой приложения; при отказе файл удалится. Нужен вход в аккаунт.": "PNG, JPG or WebP — cropped to a square. If the request is approved it becomes the app icon; if rejected the file is deleted. Login required.",
+"Контакт для ответа (необязательно)": "Contact for a reply (optional)",
+"email или @telegram": "email or @telegram",
+"Комментарий": "Comment",
+"Опишите причину…": "Describe the reason…",
+"Что неправильно?": "What is wrong?",
+"Как должно быть?": "How should it be?",
+"Например: указана неверная версия Android": "For example: wrong Android version listed",
+"Правильная информация или предложение по исправлению": "Correct information or a suggested fix",
+"Отправить заявку": "Submit request",
+"Очистить": "Clear",
+"Заявка уходит в Telegram-бота через серверный обработчик (токен бота хранится только на сервере, не в этом файле). Пока бэкенд не подключён — заявка сохраняется локально и видна во вкладке «Уведомления».": "The request goes to the Telegram bot through a server handler (the bot token is stored only on the server). Until the backend is connected, the request is saved locally and visible in the “Notifications” tab.",
+"Статус ваших заявок после проверки модератором": "The status of your requests after moderator review",
+"Вердикты по заявкам": "Request verdicts",
+"Всё, что было отправлено из этого браузера": "Everything sent from this browser",
+"Заявки и жалобы": "Requests and complaints",
+"Откройте вкладку, чтобы загрузить список": "Open the tab to load the list",
+"Мои приложения": "My apps",
+"Опубликованные вами приложения и ваши заявки на добавление: статус, причина отказа, повторная отправка.": "Your published apps and add requests: status, rejection reason, resubmission.",
+"Предложено": "Suggested",
+"Скачано": "Downloaded",
+"Ничего не выбрано": "Nothing selected",
+"Заявки на добавление": "Add requests",
+"Запросить удаление": "Request removal",
+"Исправить и отправить заново": "Fix and resubmit",
+"⏳ На рассмотрении": "⏳ Under review",
+"✅ Одобрено": "✅ Approved",
+"✅ Опубликовано": "✅ Published",
+"❌ Отклонено": "❌ Rejected",
+"🔁 Отправлено повторно": "🔁 Resubmitted",
+"🗄 Убрано из каталога": "🗄 Removed from catalog",
+"🟡 На рассмотрении": "🟡 Under review",
+"Ожидает бэкенд": "Waiting for backend",
+"Доставлено": "Delivered",
+"Заявка": "Request",
+"Заявка отправлена": "Request submitted",
+"Без названия": "Untitled",
+"Без комментария": "No comment",
+"Без имени": "No name",
+"Ошибка в информации": "Error in info",
+"Вы ещё не отправляли заявок": "You have not sent any requests yet",
+"Пока ничего нет — предложите приложение во вкладке «Заявки».": "Nothing here yet — suggest an app in the “Requests” tab.",
+"Пока пусто — отправьте заявку во вкладке «Заявки».": "Empty for now — submit a request in the “Requests” tab.",
+"Войдите в аккаунт, чтобы видеть свои приложения": "Log in to see your apps",
+"Войдите в аккаунт, чтобы видеть статус своих заявок": "Log in to see the status of your requests",
+"Найдите пользователя или вставьте его UUID — подойдёт и сразу после регистрации. Роль и отделы выдаются независимо и не заменяют друг друга. «Помощник генерала» и «Генерал» дают права и в боте.": "Find a user or paste their UUID — it works right after sign-up. The role and departments are granted independently and do not replace each other. “General’s assistant” and “General” also grant rights in the bot.",
+"Имя, @handle или UUID — UUID определится сразу": "Name, @handle or UUID — a UUID is recognized instantly",
+"Введите имя или @handle…": "Enter a name or @handle…",
+"Роль": "Role",
+"Выдать роль": "Grant role",
+"Выбран:": "Selected:",
+"Никого не нашли": "Nobody found",
+"Никого не нашли. Если человек только что зарегистрировался — вставьте его UUID.": "Nobody found. If the person has just signed up, paste their UUID.",
+"Введите минимум 2 символа": "Enter at least 2 characters",
+"Не удалось выполнить поиск": "Search failed",
+"Профиль ещё не создан — он создастся автоматически при выдаче роли.": "The profile does not exist yet — it will be created automatically when the role is granted.",
+"✔ Верификация": "✔ Verification",
+"Выдать галочку ✔": "Grant checkmark ✔",
+"Снять галочку": "Remove checkmark",
+"Роли обновлены": "Roles updated",
+"Не удалось выдать роль": "Could not grant the role",
+"Только Генерал": "General only",
+"🔎 Найти профиль пользователя": "🔎 Find a user profile",
+"Сводка по сайту. Модерация заявок остаётся в Telegram-боте.": "Site summary. Request moderation stays in the Telegram bot.",
+"↻ Обновить": "↻ Refresh",
+"Последние регистрации": "Latest sign-ups",
+"Последние решения модерации": "Latest moderation decisions",
+"Копировать UUID": "Copy UUID",
+"UUID скопирован": "UUID copied",
+"История пуста": "History is empty",
+"Нет данных": "No data",
+"пользователей": "users",
+"приложений": "apps",
+"заявок ждут": "requests pending",
+"активных VIP": "active VIP",
+"донатов всего": "donated in total",
+"Подтверждённый аккаунт": "Verified account",
+"Генерал": "General",
+"Помощник генерала": "General’s assistant",
+"Генерал — владелец проекта": "General — project owner",
+"Помощник генерала — администратор": "General’s assistant — administrator",
+"Администрация": "Staff",
+"Владелец проекта": "Project owner",
+"Манки": "Monkey",
+"Хелпер": "Helper",
+"Модератор": "Moderator",
+"Отдел заявок": "Requests dept.",
+"Отдел модерации": "Moderation dept.",
+"Без фона": "No background",
+"Флаг РФ": "Russian flag",
+"Ледяной": "Icy",
+"Тёмный": "Dark",
+"Светлый": "Light",
+"Ч/б": "B/W",
+"Зелёный": "Green",
+"Розовый": "Pink",
+"Фиолетовый": "Purple",
+"Янтарный": "Amber",
+"айсберг": "iceberg",
+"🌈 Анимированный градиент фона": "🌈 Animated gradient background",
+"Включить градиент": "Enable gradient",
+"Скорость": "Speed",
+"🌈 Градиент": "🌈 Gradient",
+"Плавно переливающийся фон из двух выбранных цветов. Доступен всем и виден в вашем профиле у других.": "A smoothly shifting background of two chosen colors. Available to everyone and visible in your profile to others.",
+"Закат": "Sunset",
+"Океан": "Ocean",
+"Неон": "Neon",
+"Аврора": "Aurora",
+"Огонь": "Fire",
+"Мята": "Mint",
+"Ночь": "Night",
+"Сирень": "Lilac",
+"Профиль сохранён": "Profile saved",
+"Сохранено в облаке ✓": "Saved to the cloud ✓",
+"Сохранено локально ✓": "Saved locally ✓",
+"Настройки сохранены на устройстве": "Settings saved on this device",
+"Ошибка сохранения": "Save error",
+"Не удалось сохранить профиль": "Could not save the profile",
+"Не удалось сохранить корону": "Could not save the crown",
+"Скопировано": "Copied",
+"Скопировано ✓": "Copied ✓",
+"Готово": "Done",
+"Применяем…": "Applying…",
+"Вы вышли из аккаунта": "You have logged out",
+"вход выполнен": "logged in",
+"Вход через Telegram выполнен": "Telegram login successful",
+"Проверяем вход через Telegram…": "Checking Telegram login…",
+"Не удалось войти через Telegram": "Could not log in via Telegram",
+"Заполните email и пароль": "Enter email and password",
+"Проверьте почту — нужно подтвердить регистрацию": "Check your email — you need to confirm the registration",
+"Нужно войти в аккаунт": "You need to log in",
+"Войдите в аккаунт заново": "Please log in again",
+"Сначала войдите в аккаунт": "Log in first",
+"Сначала войдите в аккаунт — аватар загружается в облако": "Log in first — the avatar is uploaded to the cloud",
+"Сначала войдите в аккаунт — фон загружается в облако": "Log in first — the background is uploaded to the cloud",
+"Сначала войдите в аккаунт — трек загружается в облако": "Log in first — the track is uploaded to the cloud",
+"Войдите в аккаунт, чтобы профиль сохранялся в облаке": "Log in so your profile is saved to the cloud",
+"Войдите в аккаунт, чтобы добавить иконку": "Log in to add an icon",
+"Войдите в аккаунт, чтобы приложить иконку": "Log in to attach an icon",
+"Сервис аккаунтов недоступен": "Account service unavailable",
+"Сервис аккаунтов недоступен (не загрузился Supabase)": "Account service unavailable (Supabase did not load)",
+"Сервис аккаунтов недоступен (не загрузился Supabase). Попробуйте обновить страницу.": "Account service unavailable (Supabase did not load). Try refreshing the page.",
+"Сервис хранилища недоступен": "Storage service unavailable",
+"Сервис недоступен": "Service unavailable",
+"Каталог ещё не загрузился — попробуйте через секунду": "The catalog has not loaded yet — try again in a second",
+"Аватар загружен и сохранён": "Avatar uploaded and saved",
+"Фон загружен и сохранён": "Background uploaded and saved",
+"Трек загружен и сохранён": "Track uploaded and saved",
+"Загружаем аватар…": "Uploading avatar…",
+"Загружаем фон…": "Uploading background…",
+"Файл больше 20 МБ": "File is larger than 20 MB",
+"Файл слишком большой": "File is too large",
+"Файл слишком большой (до 8 МБ)": "File is too large (max 8 MB)",
+"Нужен PNG, JPG или WebP": "PNG, JPG or WebP required",
+"Не удалось обработать картинку": "Could not process the image",
+"Не удалось прочитать картинку": "Could not read the image",
+"Не удалось загрузить файл": "Could not upload the file",
+"Ошибка загрузки файла": "File upload error",
+"Не удалось добавить иконку": "Could not add the icon",
+"Не удалось загрузить данные": "Could not load data",
+"Не удалось загрузить каталог приложений": "Could not load the app catalog",
+"Не удалось загрузить — попробуйте позже": "Could not load — try again later",
+"Не удалось загрузить — попробуйте позже.": "Could not load — try again later.",
+"Не удалось загрузить статус заявок": "Could not load request statuses",
+"Не удалось получить ссылку на файл": "Could not get the file link",
+"Не удалось отправить — заявка сохранена локально": "Could not send — the request is saved locally",
+"История уведомлений очищена": "Notification history cleared",
+"История заявок хранится в аккаунте и не удаляется отсюда": "Request history is stored in your account and is not deleted from here",
+"Сначала выберите трек": "Pick a track first",
+"Укажите название приложения": "Enter the app name",
+"Укажите причину удаления": "Enter the removal reason",
+"Укажите причину удаления и отправьте заявку": "Enter the removal reason and submit the request",
+"Опишите жалобу": "Describe the complaint",
+"Опишите, что именно неправильно": "Describe exactly what is wrong",
+"В чём жалоба?": "What is the complaint?",
+"Почему приложение нужно удалить?": "Why should the app be removed?",
+"Исправьте данные с учётом причины отказа и отправьте заявку": "Fix the data according to the rejection reason and resubmit",
+"Супабейс": "Supabase",
+"Supabase SDK не загрузился — авторизация будет недоступна, остальной сайт работает.": "The Supabase SDK did not load — sign-in is unavailable, the rest of the site works.",
+"sbClient не инициализирован — каталог не загружен": "sbClient is not initialized — the catalog is not loaded",
+"ошибка хранилища": "storage error",
+"что-то пошло не так": "something went wrong",
+"Язык переключён на русский": "Language switched to Russian",
+"Не удалось создать счёт": "Could not create the invoice",
+"Открываем Telegram для оплаты…": "Opening Telegram for payment…",
+"Создаём счёт…": "Creating the invoice…",
+"Укажите сумму от 1 до 100 000 ⭐": "Enter an amount from 1 to 100,000 ⭐",
+". Попробуйте позже.": ". Try again later.",
+"⚠️ Не похоже на корректную ссылку — такая не будет показана": "⚠️ This does not look like a valid link — it will not be shown",
+"Почта": "Email",
+"Сайт": "Website",
+"@канал или ссылка": "@channel or link",
+"id или короткое имя": "id or short name",
+"id пользователя или ссылка": "user id or link",
+"username или t.me/username": "username or t.me/username",
+"короткое имя профиля": "short profile name",
+"ник (копируется по клику) или ссылка-приглашение": "nick (copied on click) or invite link",
+"Введите": "Enter",
+"Трек владельца": "Owner’s track",
+"Громкость": "Volume",
+"Играть": "Play",
+"⚡ Активный": "⚡ Active",
+"✍️ Автор": "✍️ Author",
+"⭐ Поддержал": "⭐ Supported",
+"Активный": "Active",
+"Автор": "Author",
+"Поддержал": "Supported",
+"← На сайт": "← Back to site",
+"🛡 Управлять": "🛡 Manage",
+"⭐ Поддержать DevHub": "⭐ Support DevHub",
+"🏆 Топ донатеров": "🏆 Top donors",
+"💎 VIP за донат:": "💎 VIP for donating:",
+"Своя сумма:": "Custom amount:",
+"например, 75": "e.g. 75",
+"Поддержать на 100 ⭐": "Support with 100 ⭐",
+"Не показывать меня в топе": "Do not show me in the top",
+"DevHub — независимый каталог Android-инструментов для разработчиков. Донаты Telegram Stars идут на развитие сайта и хостинг. Это добровольно и ничего не блокирует.": "DevHub is an independent catalog of Android tools for developers. Telegram Stars donations go to site development and hosting. It is voluntary and does not lock anything.",
+"каждые 100 ⭐ = 30 дней VIP — градиент ника и рамки профиля из двух любых цветов, корона над аватаркой, значок VIP и приоритет ваших заявок. Нужно войти в аккаунт перед оплатой.": "every 100 ⭐ = 30 days of VIP — a nick and profile-frame gradient of any two colors, a crown above the avatar, a VIP badge and priority for your requests. You need to log in before paying."
+};
+const I18N_RX = [
+  [/^VIP активен до (.+)$/, 'VIP active until $1'],
+  [/^Сохранено в аккаунте (.+)$/, 'Saved to account $1'],
+  [/^С возвращением, (.+)!$/, 'Welcome back, $1!'],
+  [/^Аккаунт создан, добро пожаловать, (.+)!$/, 'Account created, welcome, $1!'],
+  [/^«(.+)» v(.+) — открываю страницу загрузки$/, '“$1” v$2 — opening the download page'],
+  [/^«(.+)» v(.+) — ссылка на файл пока не добавлена$/, '“$1” v$2 — the file link has not been added yet'],
+  [/^Часовой пояс обновлён: (.+)$/, 'Time zone updated: $1'],
+  [/^Поддержать на (\d+) ⭐$/, 'Support with $1 ⭐'],
+  [/^(\d+) приложений для Android$/, '$1 Android apps'],
+  [/^✦ (\d+) проверенных приложений в каталоге$/, '✦ $1 verified apps in the catalog'],
+  [/^Уже собрано: (\d+) ⭐ · донатов: (\d+)$/, 'Raised so far: $1 ⭐ · donations: $2'],
+  [/^Пресет (\d+)$/, 'Preset $1'],
+  [/^Ошибка: (.*)$/, 'Error: $1'],
+  [/^Ошибка Supabase: (.*)$/, 'Supabase error: $1'],
+  [/^Ошибка входа через Telegram: (.*)$/, 'Telegram login error: $1'],
+  [/^Не удалось сохранить в облако: (.*)$/, 'Could not save to the cloud: $1'],
+  [/^Не удалось загрузить иконку: (.*)$/, 'Could not upload the icon: $1'],
+  [/^Не удалось загрузить уведомления:\s*(.*)$/, 'Could not load notifications: $1'],
+  [/^Нужен VIP, до конца которого осталось не меньше (\d+) дней$/, 'Needs VIP with at least $1 days left'],
+  [/^Нужен VIP, до конца которого осталось не меньше (\d+) дней \(сейчас меньше\)\.$/, 'Needs VIP with at least $1 days left (currently fewer).'],
+  [/^Доступно: до конца VIP больше (\d+) дней\.$/, 'Available: more than $1 days of VIP left.'],
+  [/^По клику скопируется: (.+)$/, 'Copied on click: $1'],
+  [/^💬 По клику скопируется: (.+)$/, '💬 Copied on click: $1'],
+  [/^Введите (.+)$/, 'Enter $1'],
+  [/^Поддержать на (\d+) ⭐$/, 'Support with $1 ⭐'],
+  [/^Ошибка загрузки аватара: (.*)$/, 'Avatar upload error: $1'],
+  [/^Ошибка загрузки фона: (.*)$/, 'Background upload error: $1'],
+  [/^Ошибка загрузки трека: (.*)$/, 'Track upload error: $1']
+];
+
+var I18N_ON = false, i18nObs = null;
+function i18nStored(){ try{ return localStorage.getItem('devhub_lang') === 'en' ? 'en' : 'ru'; }catch(e){ return 'ru'; } }
+function trText(s){
+  const key = String(s).replace(/\s+/g, ' ').trim();
+  if(!key) return null;
+  let out = I18N_EN[key];
+  if(out === undefined){
+    for(const [re, rep] of I18N_RX){ if(re.test(key)){ out = key.replace(re, rep); break; } }
+  }
+  if(out === undefined) return null;
+  return String(s).match(/^\s*/)[0] + out + String(s).match(/\s*$/)[0];
+}
+/* tr() — для строк, которые JS показывает сам (тосты и т.п.) */
+function tr(s){ if(!I18N_ON) return s; const r = trText(s); return r === null ? s : r; }
+const I18N_CYR = /[А-Яа-яЁё]/;
+function i18nText(n){
+  if(n.__ru === undefined){ if(!I18N_CYR.test(n.data)) return; n.__ru = n.data; }
+  else if(n.data !== n.__ru && n.data !== n.__en){ if(I18N_CYR.test(n.data)) n.__ru = n.data; else { delete n.__ru; delete n.__en; return; } }
+  const out = I18N_ON ? trText(n.__ru) : null;
+  const next = out === null ? n.__ru : out;
+  n.__en = out === null ? undefined : out;
+  if(n.data !== next) n.data = next;
+}
+const I18N_ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
+function i18nAttrs(el){
+  if(!el.getAttribute) return;
+  const store = el.__ruAttr || (el.__ruAttr = {});
+  for(const a of I18N_ATTRS){
+    const cur = el.getAttribute(a);
+    if(cur === null) continue;
+    if(store[a] === undefined){ if(!I18N_CYR.test(cur)) continue; store[a] = cur; }
+    else if(cur !== store[a] && cur !== store[a + ':en']){ if(I18N_CYR.test(cur)) store[a] = cur; else { delete store[a]; delete store[a + ':en']; continue; } }
+    const out = I18N_ON ? trText(store[a]) : null;
+    const next = out === null ? store[a] : out;
+    store[a + ':en'] = out === null ? undefined : out;
+    if(cur !== next) el.setAttribute(a, next);
+  }
+}
+function i18nApply(root){
+  root = root || document.body;
+  if(!root) return;
+  if(root.nodeType === 3){ i18nText(root); return; }
+  if(root.nodeType !== 1) return;
+  i18nAttrs(root);
+  root.querySelectorAll('*').forEach(i18nAttrs);
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const list = []; while(w.nextNode()) list.push(w.currentNode);
+  list.forEach(n => { const t = n.parentNode && n.parentNode.nodeName; if(t === 'SCRIPT' || t === 'STYLE' || t === 'TEXTAREA') return; i18nText(n); });
+}
+function i18nSetLang(lang){
+  I18N_ON = lang === 'en';
+  try{ localStorage.setItem('devhub_lang', I18N_ON ? 'en' : 'ru'); }catch(e){}
+  document.documentElement.lang = I18N_ON ? 'en' : 'ru';
+  if(i18nObs) i18nObs.disconnect();
+  i18nApply(document.body);
+  if(!document.__ruTitle) document.__ruTitle = document.title;
+  document.title = I18N_ON ? (trText(document.__ruTitle) || document.__ruTitle) : document.__ruTitle;
+  i18nWatch();
+}
+function i18nWatch(){
+  if(!window.MutationObserver) return;
+  if(!i18nObs){
+    i18nObs = new MutationObserver(recs => {
+      i18nObs.disconnect();
+      try{
+        for(const r of recs){
+          if(r.type === 'characterData') i18nText(r.target);
+          else if(r.type === 'attributes') i18nAttrs(r.target);
+          else r.addedNodes.forEach(n => i18nApply(n));
+        }
+      }finally{ i18nObs.observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS }); }
+    });
+  }
+  i18nObs.observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS });
+}
+function i18nInit(){ i18nSetLang(i18nStored()); }
+
+i18nInit();
 </script>
 </body>
 </html>

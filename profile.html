@@ -91,11 +91,13 @@ html[data-theme="day"] .role-gmoder,html[data-theme="day"] [data-role="gmoder"]{
 html[data-theme="day"] .role-howner,html[data-theme="day"] [data-role="howner"]{--rc:#1d4ed8; --rc2:#3b82f6;}
 html[data-theme="day"] .role-owner,html[data-theme="day"] [data-role="owner"]{--rc:#dc2626; --rc2:#ef4444;}
 html[data-theme="day"] .role-name{filter:none;}
-.role-badge{border-radius:5px; font-weight:700; color:var(--rc, var(--muted)); background:color-mix(in srgb, var(--rc, var(--muted)) var(--rb, 15%), transparent); border:1px solid color-mix(in srgb, var(--rc, var(--muted)) 42%, transparent);}
+html[data-theme="day"] .role-badge{--rt-target:#fff;}
+.role-badge{--rt-target:#0b0b10; border-radius:5px; font-weight:700; color:color-mix(in srgb, var(--rc, var(--muted)), var(--rt-target) max(0%, calc((var(--rb, 15%) - 40%) * 1.67))); background:color-mix(in srgb, var(--rc, var(--muted)) var(--rb, 15%), transparent); border:1px solid color-mix(in srgb, var(--rc, var(--muted)) 42%, transparent);}
 .role-badge.role-app,.role-badge.role-gmoder{font-size:9.5px; font-weight:600; padding:1px 7px; opacity:.85;}
 .role-name{color:var(--rc, inherit);}
 .role-name.fx-glow{text-shadow:0 0 14px var(--rc, var(--primary)), 0 0 2px color-mix(in srgb, var(--rc, var(--primary)) 55%, transparent);}
-.role-name.fx-gradient{background:linear-gradient(120deg, var(--rc, var(--a)), var(--rc2, var(--b)), var(--rc, var(--a))); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; animation:nameShift 5s linear infinite;}
+.role-name.fx-gradient{background:linear-gradient(120deg, var(--rc, var(--a)), var(--rc2, var(--b)), var(--rc, var(--a))); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; animation:nameShift var(--fx-dur, 5s) linear infinite;}
+.role-name.fx-gradient.anim-off{animation:none;}
 .role-name.fx-shuffle{font-variant-numeric:tabular-nums;}
 @keyframes nameShift{to{background-position:200% 0;}}
 @media (prefers-reduced-motion:reduce){ .role-name.fx-gradient{animation:none;} }
@@ -127,6 +129,33 @@ html[data-theme="day"] .role-name{filter:none;}
 
 .empty-state{padding:40px 20px; text-align:center; color:var(--faint); font-size:13.5px;}
 .loading-state{padding:60px 20px; text-align:center; color:var(--faint);}
+
+/* ---- VIP-фон «металл» ---- */
+#goldBg{position:absolute; inset:0; overflow:hidden;}
+#goldBg .g-base{position:absolute; inset:0; background-size:100% 100%, 100% 100%, 320% 320%; animation:goldShift 18s ease-in-out infinite;}
+#goldBg .g-sheen{position:absolute; inset:-30%; background:linear-gradient(115deg, transparent 42%, rgba(255,255,255,.22) 50%, transparent 58%); animation:goldSheen 9s ease-in-out infinite;}
+@keyframes goldShift{0%,100%{background-position:0 0,0 0,0% 50%;} 50%{background-position:0 0,0 0,100% 50%;}}
+@keyframes goldSheen{0%{transform:translateX(-45%);} 55%,100%{transform:translateX(45%);}}
+@media (prefers-reduced-motion:reduce){ #goldBg .g-base,#goldBg .g-sheen{animation:none;} }
+/* ---- Знаки администрации ---- */
+.staff-mark{display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:6px; font-size:12px; line-height:1; vertical-align:middle; margin-left:6px; color:#fff; background:linear-gradient(135deg,var(--s1,#ef4444),var(--s2,#fbbf24)); box-shadow:0 0 8px color-mix(in srgb, var(--s1,#ef4444) 60%, transparent); cursor:help;}
+.staff-owner{--s1:#ef4444; --s2:#fbbf24;}
+.staff-howner{--s1:#3b82f6; --s2:#22d3ee;}
+.staff-frame{position:relative;}
+.staff-frame::before{content:""; position:absolute; inset:0; padding:2px; border-radius:inherit; background:linear-gradient(120deg,var(--s1),var(--s2),var(--s1)); background-size:250% 100%; animation:nameShift 6s linear infinite; -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; z-index:2;}
+.staff-frame.staff-owner{box-shadow:0 0 28px -6px rgba(239,68,68,.55);}
+.staff-frame.staff-howner{box-shadow:0 0 28px -6px rgba(59,130,246,.55);}
+.user-badge.staff-badge{color:#fff; background:linear-gradient(135deg,var(--s1),var(--s2)); border-color:transparent;}
+@media (prefers-reduced-motion:reduce){ .staff-frame::before{animation:none;} }
+.admin-bar{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:14px;}
+.admin-bar a,.admin-bar button{font:inherit; font-size:12.5px; font-weight:700; padding:7px 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface2); color:var(--text); cursor:pointer; text-decoration:none;}
+.admin-bar a:hover,.admin-bar button:hover{border-color:var(--primary); color:var(--primary);}
+
+/* ---- галочка, статус, кольцо ---- */
+.vf-check{display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:#3b82f6; color:#fff; font-size:11px; font-weight:800; line-height:1; margin-left:6px; vertical-align:middle; cursor:help; box-shadow:0 0 6px rgba(59,130,246,.55);}
+.profile-status{font-size:13.5px; color:var(--muted); font-style:italic; margin-top:6px; word-break:break-word;}
+.profile-avatar.vip-ring{position:relative;}
+.profile-avatar.vip-ring::after{content:""; position:absolute; inset:0; padding:3px; border-radius:inherit; background:linear-gradient(135deg, var(--v1), var(--v2)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; z-index:2;}
 </style>
 </head>
 <body>
@@ -163,6 +192,24 @@ try{
   if(savedSettings?.theme) document.documentElement.setAttribute('data-theme', savedSettings.theme);
 }catch(e){}
 
+/* ---- администрация и металлический фон ---- */
+function isStaffRole(role){ return role === 'owner' || role === 'howner'; }
+const STAFF_TITLES = { owner:'Генерал — владелец проекта', howner:'Помощник генерала — администратор' };
+const GOLD_DEFAULT = '#D4AF37';
+function mixHex(hex, to, t){
+  const a = [1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)), b = [1,3,5].map(i=>parseInt(to.slice(i,i+2),16));
+  return '#' + a.map((v,i)=>Math.round(v+(b[i]-v)*t).toString(16).padStart(2,'0')).join('');
+}
+function buildGoldLayer(color){
+  const base = /^#[0-9a-fA-F]{6}$/.test(color || '') ? color : GOLD_DEFAULT;
+  const dark = mixHex(base, '#000000', .55), mid = mixHex(base, '#000000', .2), light = mixHex(base, '#ffffff', .55), hi = mixHex(base, '#ffffff', .8);
+  const wrap = document.createElement('div'); wrap.id = 'goldBg';
+  const b = document.createElement('div'); b.className = 'g-base';
+  b.style.backgroundImage = `radial-gradient(circle at 18% 12%, ${hi}55, transparent 40%), radial-gradient(circle at 82% 88%, ${light}44, transparent 45%), linear-gradient(115deg, ${dark} 0%, ${base} 20%, ${light} 36%, ${mid} 50%, ${dark} 66%, ${light} 84%, ${base} 100%)`;
+  const s = document.createElement('div'); s.className = 'g-sheen';
+  wrap.appendChild(b); wrap.appendChild(s);
+  return wrap;
+}
 const ROLE_LABELS = { user:null, monkey:'Манки', helper:'Хелпер', moder:'Модератор', app:'Отдел заявок', gmoder:'Отдел модерации', howner:'Помощник генерала', owner:'Генерал' };
 /* ===================== НЕСКОЛЬКО РОЛЕЙ: основная + отделы ===================== */
 const ROLE_RANK_CLIENT = { user:0, monkey:1, helper:1, app:2, gmoder:2, moder:3, howner:4, owner:5 };
@@ -186,7 +233,7 @@ function roleBadgesHtml(role, depts, primary){
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 function vipGradient(vip, c){
   c = c || {};
-  if(vip && c.vipNick !== false && HEX_RE.test(c.vipC1 || '') && HEX_RE.test(c.vipC2 || '')) return { c1:c.vipC1, c2:c.vipC2 };
+  if(vip && c.vipNick !== false && HEX_RE.test(c.vipC1 || '') && HEX_RE.test(c.vipC2 || '')) return { c1:c.vipC1, c2:c.vipC2, anim:c.vipAnim || 'normal' };
   return null;
 }
 function applyVipFrame(el, vip, c){
@@ -196,7 +243,8 @@ function applyVipFrame(el, vip, c){
     el.classList.add('vip-frame'); el.style.setProperty('--v1', c.vipC1); el.style.setProperty('--v2', c.vipC2);
   }
 }
-function crownInnerHtml(){
+function crownInnerHtml(url){
+  if(url && /^https:\/\//.test(url)) return `<img src="${escapeHtml(url)}" alt="">`;
   return `<img src="${SUPABASE_URL}/storage/v1/object/public/assets/crown.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji',textContent:'👑'}))">`;
 }
 
@@ -224,7 +272,7 @@ function runShuffle(el, text){
 function applyNameFx(el, fx, role, text, grad){
   if(!el) return;
   text = String(text == null ? '' : text);
-  const sig = [fx||'none', role||'', text, grad ? grad.c1 + grad.c2 : ''].join('|');
+  const sig = [fx||'none', role||'', text, grad ? grad.c1 + grad.c2 + (grad.anim || '') : ''].join('|');
   if(el._fxSig === sig && el.isConnected) return;
   el._fxSig = sig;
   clearInterval(el._fxTimer); clearTimeout(el._fxTimeout);
@@ -233,6 +281,9 @@ function applyNameFx(el, fx, role, text, grad){
   if(role && ROLE_LABELS[role]) el.setAttribute('data-role', role); else el.removeAttribute('data-role');
   if(grad){ el.style.setProperty('--rc', grad.c1); el.style.setProperty('--rc2', grad.c2); }
   else { el.style.removeProperty('--rc'); el.style.removeProperty('--rc2'); }
+  const speeds = { slow:'10s', normal:'5s', fast:'2.2s' };
+  el.classList.toggle('anim-off', !!(grad && grad.anim === 'off'));
+  if(grad && speeds[grad.anim]) el.style.setProperty('--fx-dur', speeds[grad.anim]); else el.style.removeProperty('--fx-dur');
   el.textContent = text;
   if(fx === 'glow') el.classList.add('fx-glow');
   else if(fx === 'gradient') el.classList.add('fx-gradient');
@@ -249,7 +300,76 @@ const TRACK_PRESETS = {
   t4:{name:'айсберг', file:'music/aisberg.mp3'}
 };
 const THEME_IDS = ['night','day','apple','warm','frost','violet','mono','sakura','emerald','russia'];
-const socialIcons = {twitter:'🐦', telegram:'✈️', discord:'🎮', tiktok:'🎵', github:'💻', site:'🔗', youtube:'▶️', soundcloud:'☁️'};
+/* ===================== ССЫЛКИ: реестр сервисов + нормализация (одинаково в index.html и profile.html) ===================== */
+const LINK_SERVICES = {
+  telegram:   { name:'Telegram',    icon:'✈️', base:'https://t.me/',                  hosts:['t.me','telegram.me','telegram.dog'], ph:'username или t.me/username' },
+  github:     { name:'GitHub',      icon:'💻', base:'https://github.com/',            hosts:['github.com'], ph:'username' },
+  twitter:    { name:'X (Twitter)', icon:'🐦', base:'https://x.com/',                 hosts:['x.com','twitter.com'], ph:'username' },
+  instagram:  { name:'Instagram',   icon:'📸', base:'https://instagram.com/',         hosts:['instagram.com'], ph:'username' },
+  tiktok:     { name:'TikTok',      icon:'🎵', base:'https://www.tiktok.com/@',       hosts:['tiktok.com'], ph:'username' },
+  youtube:    { name:'YouTube',     icon:'▶️', base:'https://www.youtube.com/@',      hosts:['youtube.com','youtu.be'], ph:'@канал или ссылка' },
+  twitch:     { name:'Twitch',      icon:'🟣', base:'https://twitch.tv/',             hosts:['twitch.tv'], ph:'username' },
+  vk:         { name:'VK',          icon:'🔵', base:'https://vk.com/',                hosts:['vk.com','vk.ru'], ph:'id или короткое имя' },
+  steam:      { name:'Steam',       icon:'🎮', base:'https://steamcommunity.com/id/', hosts:['steamcommunity.com'], ph:'короткое имя профиля' },
+  spotify:    { name:'Spotify',     icon:'🟢', base:'https://open.spotify.com/user/', hosts:['open.spotify.com','spotify.com'], ph:'id пользователя или ссылка' },
+  soundcloud: { name:'SoundCloud',  icon:'☁️', base:'https://soundcloud.com/',        hosts:['soundcloud.com'], ph:'username' },
+  reddit:     { name:'Reddit',      icon:'👽', base:'https://www.reddit.com/user/',   hosts:['reddit.com'], ph:'username' },
+  linkedin:   { name:'LinkedIn',    icon:'💼', base:'https://www.linkedin.com/in/',   hosts:['linkedin.com'], ph:'username' },
+  boosty:     { name:'Boosty',      icon:'🚀', base:'https://boosty.to/',             hosts:['boosty.to'], ph:'username' },
+  discord:    { name:'Discord',     icon:'💬', copy:true,                              hosts:['discord.gg','discord.com'], ph:'ник (копируется по клику) или ссылка-приглашение' },
+  email:      { name:'Почта',       icon:'✉️', mail:true,                              ph:'name@example.com' },
+  site:       { name:'Сайт',        icon:'🔗', ph:'https://…' },
+};
+function linkHost(h){ return String(h || '').toLowerCase().replace(/^(www|m)\./, ''); }
+/* Вход: тип сервиса + то, что ввёл человек (ник или полный адрес). Выход: { href, label } | { copy, label } | null.
+   Допускаются только http(s) и mailto — javascript:, data: и прочее отбрасываются. */
+function normalizeLink(type, raw){
+  const svc = LINK_SERVICES[type] || LINK_SERVICES.site;
+  const t = LINK_SERVICES[type] ? type : 'site';
+  let v = String(raw == null ? '' : raw).trim();
+  if(!v || v.length > 300) return null;
+  if(svc.mail){
+    v = v.replace(/^mailto:/i, '');
+    return /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(v) ? { href:'mailto:' + v, label:v } : null;
+  }
+  const scheme = v.match(/^([a-z][a-z0-9+.-]*):/i);
+  if(scheme && !/^https?$/i.test(scheme[1])) return null;
+  const hasScheme = /^https?:\/\//i.test(v) || v.startsWith('//');
+  const startsHost = (svc.hosts || []).some(h => new RegExp('^(www\\.|m\\.)?' + h.replace(/\./g, '\\.') + '([/?#]|$)', 'i').test(v));
+  if(t === 'site' || hasScheme || startsHost){
+    let u;
+    try{ u = new URL(hasScheme ? (v.startsWith('//') ? 'https:' + v : v) : 'https://' + v); }catch(e){ return null; }
+    if(!/^https?:$/.test(u.protocol) || !u.hostname.includes('.')) return null;
+    if(t !== 'site' && svc.hosts){
+      const h = linkHost(u.hostname);
+      if(!svc.hosts.some(x => h === x || h.endsWith('.' + x))) return null;
+    }
+    return { href:u.href, label: linkHost(u.hostname) + (u.pathname !== '/' ? u.pathname : '') };
+  }
+  const name = v.replace(/^@/, '').replace(/\/+$/, '');
+  if(svc.copy) return name && name.length <= 64 ? { href:null, copy:name, label:name } : null;
+  if(!/^[A-Za-z0-9._-]{1,64}$/.test(name)) return null;
+  return { href: svc.base + name, label: (t === 'tiktok' || t === 'youtube' ? '@' : '') + name };
+}
+function linkAnchorsHtml(links, max){
+  return (links || []).slice(0, max || 12).map(l => {
+    if(!l) return '';
+    const svc = LINK_SERVICES[l.type] || LINK_SERVICES.site;
+    const n = normalizeLink(l.type, l.url);
+    if(!n) return '';
+    if(n.copy) return `<a href="#" class="link-copy" data-copy="${escapeHtml(n.copy)}" title="${escapeHtml(svc.name)}: ${escapeHtml(n.copy)} — нажмите, чтобы скопировать">${svc.icon}</a>`;
+    return `<a href="${escapeHtml(n.href)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(svc.name)}: ${escapeHtml(n.label)}">${svc.icon}</a>`;
+  }).join('');
+}
+function bindLinkCopy(root, onDone){
+  if(!root) return;
+  root.querySelectorAll('.link-copy').forEach(a => a.addEventListener('click', async e => {
+    e.preventDefault();
+    try{ await navigator.clipboard.writeText(a.dataset.copy); }catch(err){}
+    if(onDone) onDone(a);
+  }));
+}
+
 
 function escapeHtml(str){
   return String(str||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -320,6 +440,12 @@ function applyOwnerBackground(profile, c){
   const layer = document.getElementById('bgVideoLayer');
   layer.innerHTML = '';
   let src = null, isImage = false;
+  // Gold показываем, только если у владельца активен VIP (или он в администрации)
+  if(!profile.bg_url && profile.bg_preset === 'gold' && (profile.vip || isStaffRole(profile.role))){
+    layer.appendChild(buildGoldLayer((profile.customization || {}).vipBgColor));
+    document.getElementById('bgDim').style.opacity = ((c.dim ?? 72) / 100) * .5;
+    return;
+  }
   if(profile.bg_url){ src = profile.bg_url; isImage = profile.bg_type === 'image'; }
   else if(profile.bg_preset && BG_PRESETS[profile.bg_preset]){ src = BG_PRESETS[profile.bg_preset]; }
   if(src){
@@ -365,18 +491,25 @@ function setupOwnerPlayer(profile, c){
 function applyOwnerLook(profile){
   const c = profile.customization || {};
   // ник: цвет роли + эффект, выбранный владельцем в редакторе профиля
-  const vip = !!profile.vip;
+  const vip = !!profile.vip || isStaffRole(profile.role); // администрация получает VIP-функции автоматически
   applyNameFx(document.getElementById('profNick'), c.nameFx, nickRole(profile.role, profile.depts, c.primaryRole), profile.display_name, vipGradient(vip, c));
   applyVipFrame(document.querySelector('.profile-hero'), vip, c);
+  if(isStaffRole(profile.role)){
+    const hero = document.querySelector('.profile-hero');
+    if(hero && !hero.classList.contains('vip-frame')) hero.classList.add('staff-frame', 'staff-' + profile.role);
+  }
   const crownEl = document.getElementById('profCrown');
   if(crownEl && vip && c.crown){
-    crownEl.innerHTML = crownInnerHtml(); crownEl.style.display = '';
+    crownEl.innerHTML = crownInnerHtml(profile.crown_url); crownEl.style.display = '';
     document.getElementById('profAvatarWrap').classList.add('has-crown');
   }
   const av = document.querySelector('.profile-avatar');
   if(av){
     av.style.borderRadius = ({circle:'50%', rounded:'20px', square:'6px'})[c.avatarShape] || '50%';
     av.style.boxShadow = c.ring ? '0 0 0 3px var(--primary)' : 'none';
+    if(vip && c.vipRing && HEX_RE.test(c.vipC1 || '') && HEX_RE.test(c.vipC2 || '')){
+      av.classList.add('vip-ring'); av.style.setProperty('--v1', c.vipC1); av.style.setProperty('--v2', c.vipC2);
+    }
   }
   if(profile.theme && THEME_IDS.includes(profile.theme)){
     document.documentElement.setAttribute('data-theme', profile.theme);
@@ -394,18 +527,13 @@ async function renderProfile(userId){
 
   const BASE_FIELDS = 'id, display_name, handle, bio, location, avatar_url, links, stat_downloads, stat_suggestions, role';
   const FULL_FIELDS = BASE_FIELDS + ', bg_url, bg_type, track_url, track_name, customization, theme, bg_preset, track_preset, badges, depts, vip';
-  let { data: profile, error: profileError } = await sbClient
-    .from('public_profiles').select(FULL_FIELDS).eq('id', userId).maybeSingle();
-  if(profileError && /vip/i.test(profileError.message || '')){
-    // колонка vip появляется в миграции 6 — до неё показываем профиль без VIP
-    ({ data: profile, error: profileError } = await sbClient
-      .from('public_profiles').select(FULL_FIELDS.replace(', vip', '')).eq('id', userId).maybeSingle());
-  }
-  if(profileError){
-    // view ещё не обновлён миграцией — показываем хотя бы базовый профиль
-    console.warn('Полный select не прошёл, пробуем базовый:', profileError.message);
-    ({ data: profile, error: profileError } = await sbClient
-      .from('public_profiles').select(BASE_FIELDS).eq('id', userId).maybeSingle());
+  // от полного набора к базовому: колонки verified/crown_url (миграция 9) и vip (миграция 6) могут ещё отсутствовать во view
+  const fieldSets = [FULL_FIELDS + ', verified, crown_url', FULL_FIELDS, FULL_FIELDS.replace(', vip', ''), BASE_FIELDS];
+  let profile = null, profileError = null;
+  for(const fields of fieldSets){
+    ({ data: profile, error: profileError } = await sbClient.from('public_profiles').select(fields).eq('id', userId).maybeSingle());
+    if(!profileError) break;
+    console.warn('select не прошёл, пробуем набор поменьше:', profileError.message);
   }
 
   if(profileError || !profile || !profile.display_name){
@@ -422,15 +550,15 @@ async function renderProfile(userId){
     ? `<img src="${profile.avatar_url}" alt="">`
     : (profile.display_name || '?')[0].toUpperCase();
 
-  const linksHtml = (profile.links || []).filter(l=>l.url).map(l=>
-    `<a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" title="${escapeHtml(l.type)}">${socialIcons[l.type]||'🔗'}</a>`
-  ).join('');
+  const ownerVipLinks = !!profile.vip || isStaffRole(profile.role);
+  const linksHtml = linkAnchorsHtml(profile.links, ownerVipLinks ? 12 : 6);
 
   const pc = profile.customization || {};
   const rolesLayout = pc.rolesLayout === 'row' ? 'row' : 'column';   // по умолчанию — столбиком
   const rolesHtml = roleBadgesHtml(profile.role, profile.depts, pc.primaryRole);
   const roleBg = Number.isFinite(pc.roleBgOpacity) ? pc.roleBgOpacity : 15;
-  const vipBadge = profile.vip ? '<span class="user-badge vip-badge">💎 VIP</span>' : '';
+  const staffBadge = isStaffRole(profile.role) ? `<span class="user-badge staff-badge staff-${profile.role}">🛡 ${profile.role === 'owner' ? 'Владелец проекта' : 'Администрация'}</span>` : '';
+  const vipBadge = staffBadge + (profile.vip ? '<span class="user-badge vip-badge">💎 VIP</span>' : '');
   const badgesHtml = vipBadge + (Array.isArray(profile.badges) ? profile.badges : [])
     .filter(b=>BADGE_LABELS[b]).map(b=>`<span class="user-badge">${BADGE_LABELS[b]}</span>`).join('');
 
@@ -442,15 +570,17 @@ async function renderProfile(userId){
     <div class="profile-hero card glass">
       <div class="avatar-wrap" id="profAvatarWrap"><div class="vip-crown" id="profCrown" style="display:none;"></div><div class="profile-avatar">${avatarHtml}</div></div>
       <div class="profile-namerow ${rolesLayout === 'column' ? 'col' : ''}">
-        <span class="profile-name" id="profNick"></span>
+        <span class="profile-name" id="profNick"></span>${profile.verified ? '<span class="vf-check" title="Подтверждённый аккаунт">✔</span>' : ''}${isStaffRole(profile.role) ? `<span class="staff-mark staff-${profile.role}" title="${STAFF_TITLES[profile.role]}">🛡</span>` : ''}
         ${rolesHtml ? `<span class="role-stack ${rolesLayout === 'column' ? 'roles-col' : 'roles-row'}" style="--rb:${roleBg}%;">${rolesHtml}</span>` : ''}
       </div>
       ${profile.handle ? `<div class="profile-handle">@${escapeHtml(profile.handle)}</div>` : ''}
+      ${(ownerVipLinks && typeof pc.vipStatus === 'string' && pc.vipStatus.trim()) ? `<div class="profile-status">${escapeHtml(pc.vipStatus.trim().slice(0, 60))}</div>` : ''}
       ${profile.bio ? `<div class="profile-bio">${escapeHtml(profile.bio)}</div>` : ''}
       ${profile.location ? `<div class="profile-loc">📍 ${escapeHtml(profile.location)}</div>` : ''}
       ${badgesHtml ? `<div class="user-badges">${badgesHtml}</div>` : ''}
       ${linksHtml ? `<div class="profile-links">${linksHtml}</div>` : ''}
       <div id="trackPlayerHolder"></div>
+      <div class="admin-bar" id="adminBar" style="display:none;"></div>
       <div class="profile-stats">
         <div class="profile-stat"><b>${profile.stat_downloads || 0}</b><span>скачиваний</span></div>
         <div class="profile-stat"><b>${profile.stat_suggestions || 0}</b><span>предложений</span></div>
@@ -461,6 +591,28 @@ async function renderProfile(userId){
     ${appsHtml}
   `;
   applyOwnerLook(profile);
+  bindLinkCopy(document.querySelector('.profile-links'), a=>{ const old = a.textContent; a.textContent = '✓'; setTimeout(()=>{ a.textContent = old; }, 1200); });
+  showAdminBar(userId);
+}
+
+/* Кнопки для администрации: видны только если зашедший — Генерал или Помощник генерала.
+   Реальные права всё равно проверяет воркер, это только удобство. */
+async function showAdminBar(targetId){
+  if(!sbClient) return;
+  try{
+    const { data: { session } } = await sbClient.auth.getSession();
+    if(!session) return;
+    const { data: me } = await sbClient.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
+    if(!me || !isStaffRole(me.role)) return;
+    const bar = document.getElementById('adminBar');
+    if(!bar) return;
+    const own = session.user.id === targetId;
+    bar.innerHTML = (own ? '' : `<a href="index.html?manage=${encodeURIComponent(targetId)}">🛡 Управлять</a>`) + '<button type="button" id="admCopyUuid">Копировать UUID</button>';
+    bar.style.display = '';
+    document.getElementById('admCopyUuid').addEventListener('click', async e=>{
+      try{ await navigator.clipboard.writeText(targetId); e.target.textContent = 'Скопировано ✓'; }catch(err){ e.target.textContent = targetId; }
+    });
+  }catch(e){ console.warn('admin bar failed:', e); }
 }
 
 const params = new URLSearchParams(window.location.search);

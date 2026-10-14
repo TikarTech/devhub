@@ -440,6 +440,114 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
 @keyframes gradFloat{from{transform:translate(-8%,-6%) scale(1);} to{transform:translate(18%,14%) scale(1.15);}}
 @media (prefers-reduced-motion:reduce){ #gradBg .gr-base,#gradBg .gr-blob{animation:none;} }
 .bg-opt .thumb.grad{background:linear-gradient(135deg,#6d5df6,#ff7cc8); opacity:1;}
+
+
+
+/* ===================== LIQUID GLASS ===================== */
+:root{ --lg-blur:26px; --lg-sat:190%; --lg-edge:rgba(255,255,255,.38); --lg-edge2:rgba(255,255,255,.10); --lg-fill:rgba(255,255,255,.06); --lg-shadow:0 12px 34px -10px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.18); }
+html[data-theme="day"]{ --lg-edge:rgba(255,255,255,.95); --lg-edge2:rgba(255,255,255,.6); --lg-fill:rgba(255,255,255,.5); --lg-shadow:0 12px 30px -12px rgba(60,70,120,.35), 0 2px 8px rgba(60,70,120,.12); }
+
+/* фон, который стекло может «преломлять»: мягкие цветные пятна (лежат в слое затемнения, поэтому видны при любом фоне) */
+#bgDim{ background:
+  radial-gradient(60vmax 60vmax at 12% 8%, color-mix(in srgb, var(--a, var(--primary)) 78%, var(--bg)), transparent 62%),
+  radial-gradient(55vmax 55vmax at 92% 88%, color-mix(in srgb, var(--b, var(--primary)) 70%, var(--bg)), transparent 62%),
+  radial-gradient(40vmax 40vmax at 72% 14%, color-mix(in srgb, var(--primary) 45%, var(--bg)), transparent 60%),
+  var(--bg); }
+
+/* основное стекло */
+.glass{
+  background-color:color-mix(in srgb, var(--surface) 30%, transparent);
+  background-image:
+    radial-gradient(130% 90% at var(--mx, 8%) var(--my, 0%), rgba(255,255,255,.22), transparent 52%),
+    radial-gradient(90% 60% at 100% 100%, rgba(255,255,255,.07), transparent 62%),
+    linear-gradient(135deg, var(--lg-fill), transparent 55%);
+  -webkit-backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat)) brightness(1.05);
+  backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat)) brightness(1.05);
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:
+    inset 1.5px 1.5px 0 var(--lg-edge),
+    inset -1px -1px 0 var(--lg-edge2),
+    inset 0 0 24px rgba(255,255,255,.05),
+    var(--lg-shadow);
+  transition:box-shadow .25s ease, transform .25s ease, background-color .25s ease;
+}
+html[data-theme="day"] .glass{ background-color:color-mix(in srgb, #fff 46%, transparent); border-color:rgba(255,255,255,.7); }
+@media (hover:hover){ .app-row.glass:hover, .card.glass:hover{ box-shadow: inset 1.5px 1.5px 0 var(--lg-edge), inset -1px -1px 0 var(--lg-edge2), inset 0 0 30px rgba(255,255,255,.09), 0 18px 40px -12px rgba(0,0,0,.55); } }
+
+/* верхняя панель — плавающая «капсула» */
+.topbar-inner{ border-radius:28px; }
+.tabs{ background:rgba(255,255,255,.07); box-shadow: inset 0 1px 2px rgba(0,0,0,.25), inset 0 -1px 0 rgba(255,255,255,.08); border-radius:999px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.tab{ border-radius:999px; }
+.tab.active{ background:linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.10)); color:var(--text); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(255,255,255,.12), 0 4px 14px -4px rgba(0,0,0,.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+html[data-theme="day"] .tabs{ background:rgba(255,255,255,.4); }
+html[data-theme="day"] .tab.active{ background:rgba(255,255,255,.85); }
+
+/* кнопки: стеклянные капсулы */
+.btn{ border-radius:999px; transition:transform .18s cubic-bezier(.3,1.4,.5,1), box-shadow .2s, background .2s, filter .2s; }
+.btn:hover{ transform:translateY(-1px); }
+.btn:active{ transform:scale(.97); }
+.btn-primary{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--primary) 78%, white 22%), var(--primary) 62%);
+  border:1px solid rgba(255,255,255,.28);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(0,0,0,.18), 0 8px 22px -8px color-mix(in srgb, var(--primary) 80%, transparent);
+}
+.btn-primary:hover{ background:linear-gradient(180deg, color-mix(in srgb, var(--primary) 70%, white 30%), var(--primary-d) 70%); filter:brightness(1.06); }
+.btn-ghost{
+  background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(255,255,255,.06), 0 4px 14px -6px rgba(0,0,0,.4);
+  -webkit-backdrop-filter:blur(10px) saturate(160%); backdrop-filter:blur(10px) saturate(160%);
+}
+.btn-ghost:hover{ border-color:rgba(255,255,255,.38); background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.08)); }
+html[data-theme="day"] .btn-ghost{ background:rgba(255,255,255,.6); border-color:rgba(255,255,255,.9); box-shadow: inset 0 1px 0 #fff, 0 4px 14px -6px rgba(60,70,120,.3); }
+.icon-btn, .micro-select{
+  background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05)); border:1px solid rgba(255,255,255,.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 4px 12px -6px rgba(0,0,0,.4);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+}
+.theme-dot-btn{ background:conic-gradient(from 210deg, var(--a), var(--b), var(--a)); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 4px 12px -6px rgba(0,0,0,.5); }
+
+/* поля ввода — «вдавленное» стекло */
+.field input, .field select, .field textarea, input[type="text"], input[type="email"], input[type="password"], input[type="search"], textarea, select{
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:14px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.28), inset 0 -1px 0 rgba(255,255,255,.08);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  transition:border-color .2s, box-shadow .2s, background .2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="search"]:focus, textarea:focus{
+  border-color:color-mix(in srgb, var(--primary) 70%, white 30%); background:rgba(255,255,255,.1);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.22), 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+html[data-theme="day"] .field input, html[data-theme="day"] .field select, html[data-theme="day"] .field textarea{ background:rgba(255,255,255,.6); border-color:rgba(255,255,255,.9); box-shadow: inset 0 1px 3px rgba(60,70,120,.15); }
+
+/* переключатели */
+.switch .track{ background:rgba(255,255,255,.16); box-shadow: inset 0 1px 3px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.12); }
+.switch input:checked + .track{ background:linear-gradient(180deg, color-mix(in srgb, var(--primary) 80%, white 20%), var(--primary)); box-shadow: inset 0 1px 2px rgba(0,0,0,.2), 0 0 12px -2px color-mix(in srgb, var(--primary) 70%, transparent); }
+.switch .knob{ background:linear-gradient(180deg,#fff,#e9ebf5); box-shadow: 0 2px 6px rgba(0,0,0,.4), inset 0 1px 0 #fff; }
+
+/* плитки выбора, меню, модальные окна, тост */
+.bg-opt, .music-opt{ background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.14); border-radius:16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); transition:transform .18s, border-color .2s, box-shadow .2s; }
+.bg-opt:hover, .music-opt:hover{ transform:translateY(-2px); }
+.bg-opt.selected, .music-opt.selected{ border-color:color-mix(in srgb, var(--primary) 75%, white 25%); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent), 0 8px 20px -8px color-mix(in srgb, var(--primary) 60%, transparent); }
+.user-menu{ background-color:color-mix(in srgb, var(--surface) 38%, transparent); border-radius:22px; -webkit-backdrop-filter:blur(32px) saturate(200%); backdrop-filter:blur(32px) saturate(200%); }
+.um-item{ border-radius:14px; transition:background .15s; }
+.um-item:hover{ background:rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+.modal-backdrop{ background:rgba(8,10,20,.38); -webkit-backdrop-filter:blur(14px) saturate(140%); backdrop-filter:blur(14px) saturate(140%); }
+.modal{ border-radius:30px; background-color:color-mix(in srgb, var(--surface) 46%, transparent); }
+.modal-close{ color:var(--text); background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.22); box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
+.toast{ border-radius:999px; }
+.site-banner{ box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 6px 18px -8px rgba(240,180,40,.7); }
+.preview-card{ border-radius:32px; }
+
+/* мобильные: меньше блюра ради производительности */
+@media (max-width:760px){ :root{ --lg-blur:18px; --lg-sat:170%; } .modal{ border-radius:26px; } }
+/* без поддержки blur или при «уменьшить прозрачность» — плотнее и без размытия */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass, .user-menu, .modal{ background-color:color-mix(in srgb, var(--surface) 92%, transparent); }
+}
+@media (prefers-reduced-transparency:reduce){
+  .glass, .user-menu, .modal{ background-color:color-mix(in srgb, var(--surface) 94%, transparent); -webkit-backdrop-filter:none; backdrop-filter:none; }
+}
 </style>
 </head>
 <body>
@@ -3568,6 +3676,26 @@ document.documentElement.setAttribute('data-theme', state.theme);
 loadCatalogFromSupabase();
 renderOutbox();
 refreshProfileEditorUI();
+</script>
+<script>
+/* Liquid glass: блик на стекле следует за курсором (только на устройствах с мышью) */
+(function(){
+  if(!window.matchMedia || !matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  let raf = 0, last = null;
+  document.addEventListener('pointermove', function(e){
+    last = e;
+    if(raf) return;
+    raf = requestAnimationFrame(function(){
+      raf = 0;
+      const g = last.target && last.target.closest ? last.target.closest('.glass') : null;
+      if(!g) return;
+      const r = g.getBoundingClientRect();
+      if(!r.width || !r.height) return;
+      g.style.setProperty('--mx', ((last.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+      g.style.setProperty('--my', ((last.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+    });
+  }, { passive:true });
+})();
 </script>
 </body>
 </html>

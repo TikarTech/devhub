@@ -548,6 +548,17 @@ html[data-theme="day"] .field input, html[data-theme="day"] .field select, html[
 @media (prefers-reduced-transparency:reduce){
   .glass, .user-menu, .modal{ background-color:color-mix(in srgb, var(--surface) 94%, transparent); -webkit-backdrop-filter:none; backdrop-filter:none; }
 }
+
+/* ---- скачивание приложений ---- */
+button.arch-badge{font:inherit; cursor:pointer; background:transparent;}
+button.arch-badge:disabled{cursor:default; opacity:.45;}
+.arch-badge.sel{outline:2px solid var(--primary); outline-offset:1px;}
+.dl-info{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:8px;}
+.dl-info .sha{font-family:ui-monospace,Menlo,monospace; font-size:11px; border:1px dashed var(--faint); background:transparent; color:inherit; border-radius:8px; padding:2px 7px; cursor:pointer;}
+.dl-info details{flex-basis:100%;}
+.dl-info summary{cursor:pointer; color:var(--primary); font-weight:600;}
+.dl-info .chlog{white-space:pre-wrap; margin-top:6px; color:var(--muted); line-height:1.5;}
+.btn.busy{opacity:.7; pointer-events:none;}
 </style>
 </head>
 <body>
@@ -1072,10 +1083,18 @@ const ALL_ARCHS = ['arm64-v8a','armeabi-v7a','x86_64','x86'];
 
 async function loadCatalogFromSupabase(){
   if(!sbClient){ console.warn('sbClient не инициализирован — каталог не загружен'); return; }
-  const APP_COLS = 'id, name, author, description, category, icon, rating, github_url, apk_url, status, added_by, app_versions(version, architectures, created_at)';
-  const fetchApps = cols => sbClient.from('apps').select(cols).eq('status', 'approved').order('created_at', { ascending: true });
-  let { data, error } = await fetchApps(APP_COLS.replace('icon, ', 'icon, icon_url, '));
-  if(error && /icon_url/i.test(error.message || '')) ({ data, error } = await fetchApps(APP_COLS)); // миграция 6 ещё не применена
+  const base = 'id, name, author, description, category, icon, rating, github_url, apk_url, status, added_by';
+  // от полного набора колонок к базовому: миграции 6 (icon_url) и 10 (скачивания) могут быть ещё не применены
+  const colSets = [
+    `${base}, icon_url, downloads, app_versions(version, architectures, created_at, apk_url, arch_urls, size_bytes, sha256, changelog, downloads)`,
+    `${base}, icon_url, app_versions(version, architectures, created_at)`,
+    `${base}, app_versions(version, architectures, created_at)`,
+  ];
+  let data = null, error = null;
+  for(const cols of colSets){
+    ({ data, error } = await sbClient.from('apps').select(cols).eq('status', 'approved').order('created_at', { ascending: true }));
+    if(!error || !/column|does not exist|schema cache|icon_url|downloads|arch_urls|size_bytes|sha256|changelog/i.test(error.message || '')) break;
+  }
 
   if(error){
     console.error('Ошибка загрузки каталога из Supabase:', error);
@@ -1084,11 +1103,14 @@ async function loadCatalogFromSupabase(){
   }
 
   androidApps = (data || []).map(row => {
-    const versions = {};
+    const versions = {}, vmeta = {};
     (row.app_versions || [])
       .slice()
       .sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)) // новая версия первой в списке
-      .forEach(v => { versions[v.version] = v.architectures || []; });
+      .forEach(v => {
+        versions[v.version] = v.architectures || [];
+        vmeta[v.version] = { size: v.size_bytes || null, sha: /^[a-f0-9]{64}$/i.test(v.sha256 || '') ? v.sha256.toLowerCase() : null, changelog: v.changelog || '', downloads: v.downloads || 0, archUrls: v.arch_urls || {}, url: v.apk_url || null };
+      });
     return {
       id: row.id,
       icon: row.icon || '📦',
@@ -1101,7 +1123,9 @@ async function loadCatalogFromSupabase(){
       desc: row.description || '',
       githubUrl: row.github_url || null,
       apkUrl: row.apk_url || null,
+      downloads: row.downloads || 0,
       versions: Object.keys(versions).length ? versions : {'—':[]},
+      vmeta,
     };
   });
 
@@ -1169,56 +1193,119 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>sho
 document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click', e=>{e.preventDefault(); showView(el.dataset.goto);}));
 
 /* ===================== ANDROID CATALOG ===================== */
+function fmtSize(n){ return n ? (n >= 1048576 ? (n/1048576).toFixed(1) + ' ' + tr('МБ') : Math.max(1, Math.round(n/1024)) + ' ' + tr('КБ')) : ''; }
+function pickArch(avail, prefer){ return avail.includes(prefer) ? prefer : (avail.includes('arm64-v8a') ? 'arm64-v8a' : (avail[0] || '')); }
+function dlInfoHtml(app, version, arch){
+  const m = app.vmeta[version] || {};
+  const parts = [];
+  const total = m.downloads || app.downloads || 0;
+  if(total) parts.push(`<span>⬇ ${total}</span>`);
+  if(m.size) parts.push(`<span>${escapeHtml(fmtSize(m.size))}</span>`);
+  if(m.sha) parts.push(`<button type="button" class="sha" data-sha="${m.sha}" title="Контрольная сумма SHA-256 — нажмите, чтобы скопировать">SHA-256 ${m.sha.slice(0,8)}…${m.sha.slice(-6)}</button>`);
+  if(m.changelog) parts.push(`<details><summary>Что нового</summary><div class="chlog">${escapeHtml(m.changelog)}</div></details>`);
+  return parts.join('');
+}
 function androidCardHTML(app){
   const versionKeys = Object.keys(app.versions);
-  const archsForV = app.versions[versionKeys[0]];
-  return `<div class="android-card card glass" data-app="${app.id}">
+  const v0 = versionKeys[0], archsForV = app.versions[v0] || [], pick = pickArch(archsForV, 'arm64-v8a');
+  const m = app.vmeta[v0] || {};
+  const vt = m.sha ? `https://www.virustotal.com/gui/file/${m.sha}` : `https://www.virustotal.com/gui/search/${encodeURIComponent(app.name)}`;
+  return `<div class="android-card card glass" data-app="${app.id}" data-arch="${pick}">
     <div class="android-row">
       <div class="tool-icon">${appIconHtml(app.name, app.icon, app.iconUrl)}</div>
       <div class="android-meta">
-        <div style="display:flex; align-items:center; gap:8px;"><div class="tool-name">${app.name}</div><div class="tool-rating">★ ${app.rating}</div></div>
-        <div class="tool-author">${app.addedBy ? `<a href="profile.html?id=${app.addedBy}" style="color:inherit; text-decoration:none; border-bottom:1px dashed var(--faint);">${app.author}</a>` : app.author}</div>
-        <div class="tool-desc">${app.desc}</div>
+        <div style="display:flex; align-items:center; gap:8px;"><div class="tool-name">${escapeHtml(app.name)}</div><div class="tool-rating">★ ${escapeHtml(String(app.rating))}</div></div>
+        <div class="tool-author">${app.addedBy ? `<a href="profile.html?id=${encodeURIComponent(app.addedBy)}" style="color:inherit; text-decoration:none; border-bottom:1px dashed var(--faint);">${escapeHtml(app.author)}</a>` : escapeHtml(app.author)}</div>
+        <div class="tool-desc">${escapeHtml(app.desc)}</div>
       </div>
       <div class="android-selects">
-        <select class="sel version-sel" data-app="${app.id}">${versionKeys.map(v=>`<option value="${v}">v${v}</option>`).join('')}</select>
+        <select class="sel version-sel" data-app="${app.id}">${versionKeys.map(v=>`<option value="${escapeHtml(v)}">v${escapeHtml(v)}</option>`).join('')}</select>
         <a class="btn btn-primary btn-sm dl-btn" data-app="${app.id}" href="#">Скачать</a>
-        <a class="vt-link" target="_blank" rel="noopener" href="https://www.virustotal.com/gui/search/${encodeURIComponent(app.name)}">🛡 VirusTotal ↗</a>
-        ${app.githubUrl ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${app.githubUrl}">🐙 GitHub / Исходный код</a>` : ''}
+        <a class="vt-link" target="_blank" rel="noopener noreferrer" href="${vt}">🛡 VirusTotal ↗</a>
+        ${app.githubUrl && /^https?:\/\//i.test(app.githubUrl) ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener noreferrer" href="${escapeHtml(app.githubUrl)}">🐙 GitHub / Исходный код</a>` : ''}
       </div>
     </div>
     <div class="arch-badges" data-archwrap="${app.id}">
-      ${ALL_ARCHS.map(a=>`<span class="arch-badge ${archsForV.includes(a)?'on':''}" data-arch="${a}">${a}</span>`).join('')}
+      ${ALL_ARCHS.map(a=>`<button type="button" class="arch-badge ${archsForV.includes(a)?'on':''} ${a===pick?'sel':''}" data-arch="${a}" ${archsForV.includes(a)?'':'disabled'} title="Выберите архитектуру">${a}</button>`).join('')}
     </div>
+    <div class="dl-info" data-info="${app.id}">${dlInfoHtml(app, v0, pick)}</div>
   </div>`;
 }
+/* обновить карточку после смены версии или архитектуры */
+function refreshAppCard(card){
+  const app = androidApps.find(a=>String(a.id)===card.dataset.app); if(!app) return;
+  const version = card.querySelector('.version-sel').value;
+  const avail = app.versions[version] || [];
+  if(!avail.includes(card.dataset.arch)) card.dataset.arch = pickArch(avail, card.dataset.arch);
+  card.querySelectorAll('.arch-badge').forEach(b=>{
+    const on = avail.includes(b.dataset.arch);
+    b.classList.toggle('on', on); b.disabled = !on; b.classList.toggle('sel', on && b.dataset.arch === card.dataset.arch);
+  });
+  const m = app.vmeta[version] || {};
+  card.querySelector('.vt-link').href = m.sha ? `https://www.virustotal.com/gui/file/${m.sha}` : `https://www.virustotal.com/gui/search/${encodeURIComponent(app.name)}`;
+  card.querySelector('.dl-info').innerHTML = dlInfoHtml(app, version, card.dataset.arch);
+  bindShaCopy(card);
+}
+function bindShaCopy(root){
+  root.querySelectorAll('.sha').forEach(b=>b.addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(b.dataset.sha); }catch(e){}
+    showToast('SHA-256 скопирован');
+  }));
+}
+async function downloadApp(app, btn){
+  const card = btn.closest('.android-card');
+  const version = card.querySelector('.version-sel').value;
+  const arch = card.dataset.arch || '';
+  const label = btn.textContent;
+  btn.classList.add('busy'); btn.textContent = tr('Подготовка…');
+  try{
+    let out = null;
+    try{
+      const res = await fetch(REPORT_ENDPOINT + '/download', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ app_id: String(app.id), version, arch }) });
+      out = await res.json().catch(()=>null);
+      if(!res.ok || !out || !out.ok){ showToast((out && out.message) || 'Не удалось получить ссылку на файл'); return; }
+    }catch(netErr){
+      // сервер недоступен — открываем ссылку из каталога напрямую (счётчик в этом случае не увеличится)
+      const fb = app.apkUrl || (app.githubUrl ? app.githubUrl.replace(/\/$/, '') + '/releases' : null);
+      if(!fb || !/^https:\/\//i.test(fb)){ showToast('Для этой версии пока нет файла'); return; }
+      out = { ok:true, url: fb, direct:false, counted:false };
+    }
+    if(out.direct){
+      const a = document.createElement('a'); a.href = out.url; a.rel = 'noopener noreferrer'; a.download = '';
+      document.body.appendChild(a); a.click(); a.remove();
+      showToast(`«${app.name}» v${version} — скачивание началось`);
+    } else {
+      window.open(out.url, '_blank', 'noopener');
+      showToast(`«${app.name}» v${version} — открываю страницу загрузки`);
+    }
+    if(out.counted){
+      app.downloads = (app.downloads || 0) + 1;
+      if(app.vmeta[version]) app.vmeta[version].downloads = (app.vmeta[version].downloads || 0) + 1;
+      document.querySelectorAll(`.android-card[data-app="${app.id}"]`).forEach(refreshAppCard);
+    }
+    state.profile.statDownloads = (state.profile.statDownloads||0) + 1;
+    persistProfile(); updatePreview();
+  } finally {
+    btn.classList.remove('busy'); btn.textContent = label;
+  }
+}
 function renderAndroid(){
-  document.getElementById('homeList').innerHTML = androidApps.slice(0,4).map(androidCardHTML).join('');
+  const popular = androidApps.slice().sort((a,b)=>(b.downloads||0)-(a.downloads||0)).slice(0,4);
+  document.getElementById('homeList').innerHTML = popular.map(androidCardHTML).join('');
   document.getElementById('androidList').innerHTML = androidApps.map(androidCardHTML).join('');
   document.getElementById('appCountBadge').textContent = `✦ ${androidApps.length} проверенных приложений в каталоге`;
   document.getElementById('catalogCount').textContent = `${androidApps.length} приложений для Android`;
-  document.querySelectorAll('.version-sel').forEach(sel=>{
-    sel.addEventListener('change', ()=>{
-      const app = androidApps.find(a=>a.id===sel.dataset.app);
-      const archs = app.versions[sel.value];
-      document.querySelectorAll(`[data-archwrap="${app.id}"] .arch-badge`).forEach(b=>b.classList.toggle('on', archs.includes(b.dataset.arch)));
-    });
-  });
-  document.querySelectorAll('.dl-btn').forEach(btn=>{
-    btn.addEventListener('click', e=>{
+  document.querySelectorAll('.android-card').forEach(card=>{
+    bindShaCopy(card);
+    card.querySelector('.version-sel').addEventListener('change', ()=>refreshAppCard(card));
+    card.querySelectorAll('.arch-badge').forEach(b=>b.addEventListener('click', ()=>{
+      if(b.disabled) return;
+      card.dataset.arch = b.dataset.arch; refreshAppCard(card);
+    }));
+    card.querySelector('.dl-btn').addEventListener('click', e=>{
       e.preventDefault();
-      const app = androidApps.find(a=>a.id===btn.dataset.app);
-      const sel = document.querySelector(`.version-sel[data-app="${app.id}"]`);
-      state.profile.statDownloads = (state.profile.statDownloads||0) + 1;
-      persistProfile();
-      updatePreview();
-      const target = app.apkUrl || (app.githubUrl ? app.githubUrl.replace(/\/$/,'') + '/releases' : null);
-      if(target){
-        window.open(target, '_blank', 'noopener');
-        showToast(`«${app.name}» v${sel.value} — открываю страницу загрузки`);
-      } else {
-        showToast(`«${app.name}» v${sel.value} — ссылка на файл пока не добавлена`);
-      }
+      const app = androidApps.find(a=>String(a.id)===card.dataset.app);
+      if(app) downloadApp(app, e.currentTarget);
     });
   });
 }
@@ -2571,6 +2658,17 @@ const I18N_EN = {
 "Поддержал": "Supported",
 "← На сайт": "← Back to site",
 "🛡 Управлять": "🛡 Manage",
+"Подготовка…": "Preparing…",
+"Что нового": "What’s new",
+"SHA-256 скопирован": "SHA-256 copied",
+"Для этой версии пока нет файла": "There is no file for this version yet",
+"МБ": "MB",
+"КБ": "KB",
+"Контрольная сумма SHA-256 — нажмите, чтобы скопировать": "SHA-256 checksum — click to copy",
+"Архитектура": "Architecture",
+"Выберите архитектуру": "Choose an architecture",
+"Скачивание началось": "Download started",
+"скачиваний": "downloads",
 "⭐ Поддержать DevHub": "⭐ Support DevHub",
 "🏆 Топ донатеров": "🏆 Top donors",
 "💎 VIP за донат:": "💎 VIP for donating:",
@@ -2607,6 +2705,8 @@ const I18N_RX = [
   [/^💬 По клику скопируется: (.+)$/, '💬 Copied on click: $1'],
   [/^Введите (.+)$/, 'Enter $1'],
   [/^Поддержать на (\d+) ⭐$/, 'Support with $1 ⭐'],
+  [/^«(.+)» v(.+) — скачивание началось$/, '“$1” v$2 — download started'],
+  [/^«(.+)» — скачивание началось$/, '“$1” — download started'],
   [/^Ошибка загрузки аватара: (.*)$/, 'Avatar upload error: $1'],
   [/^Ошибка загрузки фона: (.*)$/, 'Background upload error: $1'],
   [/^Ошибка загрузки трека: (.*)$/, 'Track upload error: $1']
@@ -2667,6 +2767,7 @@ function i18nSetLang(lang){
   document.documentElement.lang = I18N_ON ? 'en' : 'ru';
   if(i18nObs) i18nObs.disconnect();
   i18nApply(document.body);
+  const tt = trText(document.title.__ru || document.title);
   if(!document.__ruTitle) document.__ruTitle = document.title;
   document.title = I18N_ON ? (trText(document.__ruTitle) || document.__ruTitle) : document.__ruTitle;
   i18nWatch();

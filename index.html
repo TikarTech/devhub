@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DevHub — Android каталог инструментов</title>
+<title>AppMint — Android каталог инструментов</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -570,7 +570,7 @@ button.arch-badge:disabled{cursor:default; opacity:.45;}
 
 <div class="topbar">
   <div class="topbar-inner glass">
-    <div class="brand"><span class="mark"></span>DevHub</div>
+    <div class="brand"><span class="mark"></span>AppMint</div>
     <nav class="tabs" id="tabs">
       <button class="tab active" data-view="home">Главная</button>
       <button class="tab" data-view="android">Каталог</button>
@@ -903,7 +903,7 @@ button.arch-badge:disabled{cursor:default; opacity:.45;}
     <div class="wrap">
       <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center;">
         <h2>Заявки и жалобы</h2>
-        <p>Добавить / удалить приложение или пожаловаться — заявка уходит модераторам DevHub</p>
+        <p>Добавить / удалить приложение или пожаловаться — заявка уходит модераторам AppMint</p>
       </div>
       <div class="form-card glass">
         <div class="seg" id="reqType">
@@ -959,7 +959,7 @@ button.arch-badge:disabled{cursor:default; opacity:.45;}
 <footer>
   <div class="wrap">
     <div class="foot-grid">
-      <div class="foot-brand"><div class="brand"><span class="mark"></span>DevHub</div>
+      <div class="foot-brand"><div class="brand"><span class="mark"></span>AppMint</div>
         <p>Каталог Android-приложений для разработчиков с гибкой персонализацией профиля.</p></div>
       <div class="foot-cols">
         <div class="foot-col"><h4>Разделы</h4>
@@ -968,7 +968,7 @@ button.arch-badge:disabled{cursor:default; opacity:.45;}
           <a href="#" data-goto="notifications">Уведомления</a><a href="#" id="footSettings">Настройки</a><a href="#" id="footAuth">Аккаунт</a><a href="donate.html" class="support-link">⭐ Поддержать</a></div>
       </div>
     </div>
-    <div class="foot-bottom">© 2026 DevHub. Все права защищены.</div>
+    <div class="foot-bottom">© 2026 AppMint. Все права защищены.</div>
   </div>
 </footer>
 
@@ -1079,7 +1079,15 @@ try{
    Структура объекта в androidApps сохранена прежней (id, icon, name, author, rating, cat, desc, versions),
    чтобы весь код рендеринга ниже (androidCardHTML, renderAndroid, фильтры) остался без изменений. */
 let androidApps = [];
-const ALL_ARCHS = ['arm64-v8a','armeabi-v7a','x86_64','x86'];
+const ALL_ARCHS = ['universal','arm64-v8a','armeabi-v7a','x86_64','x86'];
+const ARCH_LABELS = { universal:'Universal' };
+/* какие архитектуры доступны у версии: если сведений нет, но есть общий файл — это universal */
+function availArchs(app, version){
+  const list = (app.versions[version] || []).slice();
+  const m = app.vmeta[version] || {};
+  if(!list.length && (m.url || app.apkUrl)) list.push('universal');
+  return list;
+}
 
 async function loadCatalogFromSupabase(){
   if(!sbClient){ console.warn('sbClient не инициализирован — каталог не загружен'); return; }
@@ -1194,7 +1202,7 @@ document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click'
 
 /* ===================== ANDROID CATALOG ===================== */
 function fmtSize(n){ return n ? (n >= 1048576 ? (n/1048576).toFixed(1) + ' ' + tr('МБ') : Math.max(1, Math.round(n/1024)) + ' ' + tr('КБ')) : ''; }
-function pickArch(avail, prefer){ return avail.includes(prefer) ? prefer : (avail.includes('arm64-v8a') ? 'arm64-v8a' : (avail[0] || '')); }
+function pickArch(avail, prefer){ return avail.includes(prefer) ? prefer : (avail.includes('universal') ? 'universal' : (avail.includes('arm64-v8a') ? 'arm64-v8a' : (avail[0] || ''))); }
 function dlInfoHtml(app, version, arch){
   const m = app.vmeta[version] || {};
   const parts = [];
@@ -1207,7 +1215,7 @@ function dlInfoHtml(app, version, arch){
 }
 function androidCardHTML(app){
   const versionKeys = Object.keys(app.versions);
-  const v0 = versionKeys[0], archsForV = app.versions[v0] || [], pick = pickArch(archsForV, 'arm64-v8a');
+  const v0 = versionKeys[0], archsForV = availArchs(app, v0), pick = pickArch(archsForV, 'universal');
   const m = app.vmeta[v0] || {};
   const vt = m.sha ? `https://www.virustotal.com/gui/file/${m.sha}` : `https://www.virustotal.com/gui/search/${encodeURIComponent(app.name)}`;
   return `<div class="android-card card glass" data-app="${app.id}" data-arch="${pick}">
@@ -1226,7 +1234,7 @@ function androidCardHTML(app){
       </div>
     </div>
     <div class="arch-badges" data-archwrap="${app.id}">
-      ${ALL_ARCHS.map(a=>`<button type="button" class="arch-badge ${archsForV.includes(a)?'on':''} ${a===pick?'sel':''}" data-arch="${a}" ${archsForV.includes(a)?'':'disabled'} title="Выберите архитектуру">${a}</button>`).join('')}
+      ${ALL_ARCHS.map(a=>`<button type="button" class="arch-badge ${archsForV.includes(a)?'on':''} ${a===pick?'sel':''}" data-arch="${a}" ${archsForV.includes(a)?'':'disabled'} title="Выберите архитектуру">${ARCH_LABELS[a] || a}</button>`).join('')}
     </div>
     <div class="dl-info" data-info="${app.id}">${dlInfoHtml(app, v0, pick)}</div>
   </div>`;
@@ -1235,7 +1243,7 @@ function androidCardHTML(app){
 function refreshAppCard(card){
   const app = androidApps.find(a=>String(a.id)===card.dataset.app); if(!app) return;
   const version = card.querySelector('.version-sel').value;
-  const avail = app.versions[version] || [];
+  const avail = availArchs(app, version);
   if(!avail.includes(card.dataset.arch)) card.dataset.arch = pickArch(avail, card.dataset.arch);
   card.querySelectorAll('.arch-badge').forEach(b=>{
     const on = avail.includes(b.dataset.arch);
@@ -2262,10 +2270,10 @@ const I18N_EN = {
 "GMT+3 МСК": "GMT+3 Moscow",
 "GMT+5 Алматы": "GMT+5 Almaty",
 "GMT+7 Новосибирск": "GMT+7 Novosibirsk",
-"DevHub — Android каталог инструментов": "DevHub — Android tools catalog",
-"Профиль — DevHub": "Profile — DevHub",
-"Поддержать — DevHub": "Support — DevHub",
-"© 2026 DevHub. Все права защищены.": "© 2026 DevHub. All rights reserved.",
+"AppMint — Android каталог инструментов": "AppMint — Android tools catalog",
+"Профиль — AppMint": "Profile — AppMint",
+"Поддержать — AppMint": "Support — AppMint",
+"© 2026 AppMint. Все права защищены.": "© 2026 AppMint. All rights reserved.",
 "Android-инструменты для": "Android tools for",
 "разработчиков": "developers",
 "в одном каталоге": "in one catalog",
@@ -2434,7 +2442,7 @@ const I18N_EN = {
 "Сапфир": "Sapphire",
 "Рубин": "Ruby",
 "Аметист": "Amethyst",
-"Добавить / удалить приложение или пожаловаться — заявка уходит модераторам DevHub": "Add / remove an app or file a complaint — the request goes to DevHub moderators",
+"Добавить / удалить приложение или пожаловаться — заявка уходит модераторам AppMint": "Add / remove an app or file a complaint — the request goes to AppMint moderators",
 "Добавить": "Add",
 "Удалить": "Delete",
 "Жалоба": "Complaint",
@@ -2669,14 +2677,14 @@ const I18N_EN = {
 "Выберите архитектуру": "Choose an architecture",
 "Скачивание началось": "Download started",
 "скачиваний": "downloads",
-"⭐ Поддержать DevHub": "⭐ Support DevHub",
+"⭐ Поддержать AppMint": "⭐ Support AppMint",
 "🏆 Топ донатеров": "🏆 Top donors",
 "💎 VIP за донат:": "💎 VIP for donating:",
 "Своя сумма:": "Custom amount:",
 "например, 75": "e.g. 75",
 "Поддержать на 100 ⭐": "Support with 100 ⭐",
 "Не показывать меня в топе": "Do not show me in the top",
-"DevHub — независимый каталог Android-инструментов для разработчиков. Донаты Telegram Stars идут на развитие сайта и хостинг. Это добровольно и ничего не блокирует.": "DevHub is an independent catalog of Android tools for developers. Telegram Stars donations go to site development and hosting. It is voluntary and does not lock anything.",
+"AppMint — независимый каталог Android-инструментов для разработчиков. Донаты Telegram Stars идут на развитие сайта и хостинг. Это добровольно и ничего не блокирует.": "AppMint is an independent catalog of Android tools for developers. Telegram Stars donations go to site development and hosting. It is voluntary and does not lock anything.",
 "каждые 100 ⭐ = 30 дней VIP — градиент ника и рамки профиля из двух любых цветов, корона над аватаркой, значок VIP и приоритет ваших заявок. Нужно войти в аккаунт перед оплатой.": "every 100 ⭐ = 30 days of VIP — a nick and profile-frame gradient of any two colors, a crown above the avatar, a VIP badge and priority for your requests. You need to log in before paying."
 };
 const I18N_RX = [

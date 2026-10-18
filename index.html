@@ -443,110 +443,109 @@ footer{border-top:1px solid var(--border); padding:36px 0 24px; margin-top:10px;
 
 
 
-/* ===================== LIQUID GLASS ===================== */
-:root{ --lg-blur:26px; --lg-sat:190%; --lg-edge:rgba(255,255,255,.38); --lg-edge2:rgba(255,255,255,.10); --lg-fill:rgba(255,255,255,.06); --lg-shadow:0 12px 34px -10px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.18); }
-html[data-theme="day"]{ --lg-edge:rgba(255,255,255,.95); --lg-edge2:rgba(255,255,255,.6); --lg-fill:rgba(255,255,255,.5); --lg-shadow:0 12px 30px -12px rgba(60,70,120,.35), 0 2px 8px rgba(60,70,120,.12); }
+/* ===================== LIQUID GLASS · MATTE ===================== */
+:root{ --lg-blur:22px; --lg-sat:125%; --lg-edge:rgba(255,255,255,.13); --lg-edge2:rgba(255,255,255,.05); --lg-fill:rgba(255,255,255,.035); --lg-shadow:0 14px 34px -14px rgba(0,0,0,.55), 0 1px 3px rgba(0,0,0,.18);
+  --lg-grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .32 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.22'/></svg>"); }
+html[data-theme="day"]{ --lg-edge:rgba(255,255,255,.8); --lg-edge2:rgba(255,255,255,.4); --lg-fill:rgba(255,255,255,.4); --lg-shadow:0 12px 28px -14px rgba(60,70,120,.3), 0 1px 3px rgba(60,70,120,.1); }
 
-/* фон, который стекло может «преломлять»: мягкие цветные пятна (лежат в слое затемнения, поэтому видны при любом фоне) */
+/* фон, который стекло размывает: мягкие цветные пятна (лежат в слое затемнения, поэтому видны при любом фоне) */
 #bgDim{ background:
-  radial-gradient(60vmax 60vmax at 12% 8%, color-mix(in srgb, var(--a, var(--primary)) 78%, var(--bg)), transparent 62%),
-  radial-gradient(55vmax 55vmax at 92% 88%, color-mix(in srgb, var(--b, var(--primary)) 70%, var(--bg)), transparent 62%),
-  radial-gradient(40vmax 40vmax at 72% 14%, color-mix(in srgb, var(--primary) 45%, var(--bg)), transparent 60%),
+  radial-gradient(60vmax 60vmax at 12% 8%, color-mix(in srgb, var(--a, var(--primary)) 62%, var(--bg)), transparent 62%),
+  radial-gradient(55vmax 55vmax at 92% 88%, color-mix(in srgb, var(--b, var(--primary)) 55%, var(--bg)), transparent 62%),
   var(--bg); }
 
-/* основное стекло */
+/* основное стекло: матовое, с лёгким зерном и без глянцевого блика */
 .glass{
-  background-color:color-mix(in srgb, var(--surface) 30%, transparent);
+  background-color:color-mix(in srgb, var(--surface) 58%, transparent);
   background-image:
-    radial-gradient(130% 90% at var(--mx, 8%) var(--my, 0%), rgba(255,255,255,.22), transparent 52%),
-    radial-gradient(90% 60% at 100% 100%, rgba(255,255,255,.07), transparent 62%),
-    linear-gradient(135deg, var(--lg-fill), transparent 55%);
-  -webkit-backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat)) brightness(1.05);
-  backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat)) brightness(1.05);
+    var(--lg-grain),
+    radial-gradient(130% 90% at var(--mx, 8%) var(--my, 0%), rgba(255,255,255,.07), transparent 55%),
+    linear-gradient(180deg, var(--lg-fill), transparent 60%);
+  background-size:160px 160px, auto, auto;
+  -webkit-backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat));
+  backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat));
   border:1px solid rgba(255,255,255,.07);
   box-shadow:
-    inset 1.5px 1.5px 0 var(--lg-edge),
+    inset 1px 1px 0 var(--lg-edge),
     inset -1px -1px 0 var(--lg-edge2),
-    inset 0 0 24px rgba(255,255,255,.05),
     var(--lg-shadow);
   transition:box-shadow .25s ease, transform .25s ease, background-color .25s ease;
 }
-html[data-theme="day"] .glass{ background-color:color-mix(in srgb, #fff 46%, transparent); border-color:rgba(255,255,255,.7); }
-@media (hover:hover){ .app-row.glass:hover, .card.glass:hover{ box-shadow: inset 1.5px 1.5px 0 var(--lg-edge), inset -1px -1px 0 var(--lg-edge2), inset 0 0 30px rgba(255,255,255,.09), 0 18px 40px -12px rgba(0,0,0,.55); } }
+html[data-theme="day"] .glass{ background-color:color-mix(in srgb, #fff 62%, transparent); border-color:rgba(255,255,255,.7); }
+@media (hover:hover){ .app-row.glass:hover, .card.glass:hover{ box-shadow: inset 1px 1px 0 var(--lg-edge), inset -1px -1px 0 var(--lg-edge2), 0 18px 38px -14px rgba(0,0,0,.6); } }
 
-/* верхняя панель — плавающая «капсула» */
+/* единый вид панелей: карточки, поиск, редактор профиля */
+.card.glass{ border-radius:22px; }
+.editor-panel{ background:transparent; border-radius:18px; }
+.editor-card{ border-radius:26px; }
+
+/* верхняя панель — плавающая капсула */
 .topbar-inner{ border-radius:28px; }
-.tabs{ background:rgba(255,255,255,.07); box-shadow: inset 0 1px 2px rgba(0,0,0,.25), inset 0 -1px 0 rgba(255,255,255,.08); border-radius:999px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.tabs{ background:rgba(255,255,255,.045); box-shadow: inset 0 1px 2px rgba(0,0,0,.22); border-radius:999px; }
 .tab{ border-radius:999px; }
-.tab.active{ background:linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.10)); color:var(--text); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(255,255,255,.12), 0 4px 14px -4px rgba(0,0,0,.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
-html[data-theme="day"] .tabs{ background:rgba(255,255,255,.4); }
-html[data-theme="day"] .tab.active{ background:rgba(255,255,255,.85); }
+.tab.active{ background:rgba(255,255,255,.14); color:var(--text); box-shadow: 0 2px 8px -3px rgba(0,0,0,.4); }
+html[data-theme="day"] .tabs{ background:rgba(255,255,255,.45); }
+html[data-theme="day"] .tab.active{ background:rgba(255,255,255,.9); }
 
-/* кнопки: стеклянные капсулы */
+/* кнопки: матовые капсулы без глянца */
 .btn{ border-radius:999px; transition:transform .18s cubic-bezier(.3,1.4,.5,1), box-shadow .2s, background .2s, filter .2s; }
 .btn:hover{ transform:translateY(-1px); }
 .btn:active{ transform:scale(.97); }
 .btn-primary{
-  background:linear-gradient(180deg, color-mix(in srgb, var(--primary) 78%, white 22%), var(--primary) 62%);
-  border:1px solid rgba(255,255,255,.28);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(0,0,0,.18), 0 8px 22px -8px color-mix(in srgb, var(--primary) 80%, transparent);
+  background:color-mix(in srgb, var(--primary) 92%, #000);
+  border:1px solid color-mix(in srgb, var(--primary) 70%, white 30%);
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--primary) 70%, transparent);
 }
-.btn-primary:hover{ background:linear-gradient(180deg, color-mix(in srgb, var(--primary) 70%, white 30%), var(--primary-d) 70%); filter:brightness(1.06); }
+.btn-primary:hover{ background:var(--primary); filter:brightness(1.05); }
 .btn-ghost{
-  background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
-  border:1px solid rgba(255,255,255,.18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(255,255,255,.06), 0 4px 14px -6px rgba(0,0,0,.4);
-  -webkit-backdrop-filter:blur(10px) saturate(160%); backdrop-filter:blur(10px) saturate(160%);
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:none;
 }
-.btn-ghost:hover{ border-color:rgba(255,255,255,.38); background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.08)); }
-html[data-theme="day"] .btn-ghost{ background:rgba(255,255,255,.6); border-color:rgba(255,255,255,.9); box-shadow: inset 0 1px 0 #fff, 0 4px 14px -6px rgba(60,70,120,.3); }
-.icon-btn, .micro-select{
-  background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05)); border:1px solid rgba(255,255,255,.18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 4px 12px -6px rgba(0,0,0,.4);
-  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
-}
-.theme-dot-btn{ background:conic-gradient(from 210deg, var(--a), var(--b), var(--a)); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 4px 12px -6px rgba(0,0,0,.5); }
+.btn-ghost:hover{ border-color:rgba(255,255,255,.26); background:rgba(255,255,255,.11); }
+html[data-theme="day"] .btn-ghost{ background:rgba(255,255,255,.65); border-color:rgba(255,255,255,.9); box-shadow: 0 3px 10px -6px rgba(60,70,120,.3); }
+.icon-btn, .micro-select{ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); box-shadow:none; }
+.theme-dot-btn{ background:conic-gradient(from 210deg, var(--a), var(--b), var(--a)); box-shadow: 0 3px 10px -5px rgba(0,0,0,.5); }
 
-/* поля ввода — «вдавленное» стекло */
+/* поля ввода */
 .field input, .field select, .field textarea, input[type="text"], input[type="email"], input[type="password"], input[type="search"], textarea, select{
-  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:14px;
-  box-shadow: inset 0 2px 6px rgba(0,0,0,.28), inset 0 -1px 0 rgba(255,255,255,.08);
-  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.11); border-radius:14px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.22);
   transition:border-color .2s, box-shadow .2s, background .2s;
 }
-.field input:focus, .field select:focus, .field textarea:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="search"]:focus, textarea:focus{
-  border-color:color-mix(in srgb, var(--primary) 70%, white 30%); background:rgba(255,255,255,.1);
-  box-shadow: inset 0 2px 6px rgba(0,0,0,.22), 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
+.field input:focus, .field select:focus, .field textarea:focus,
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="search"]:focus, textarea:focus{
+  border-color:color-mix(in srgb, var(--primary) 65%, white 35%); background:rgba(255,255,255,.08);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.18), 0 0 0 3px color-mix(in srgb, var(--primary) 24%, transparent);
 }
-html[data-theme="day"] .field input, html[data-theme="day"] .field select, html[data-theme="day"] .field textarea{ background:rgba(255,255,255,.6); border-color:rgba(255,255,255,.9); box-shadow: inset 0 1px 3px rgba(60,70,120,.15); }
+html[data-theme="day"] .field input, html[data-theme="day"] .field select, html[data-theme="day"] .field textarea{ background:rgba(255,255,255,.65); border-color:rgba(255,255,255,.9); box-shadow: inset 0 1px 2px rgba(60,70,120,.12); }
 
 /* переключатели */
-.switch .track{ background:rgba(255,255,255,.16); box-shadow: inset 0 1px 3px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.12); }
-.switch input:checked + .track{ background:linear-gradient(180deg, color-mix(in srgb, var(--primary) 80%, white 20%), var(--primary)); box-shadow: inset 0 1px 2px rgba(0,0,0,.2), 0 0 12px -2px color-mix(in srgb, var(--primary) 70%, transparent); }
-.switch .knob{ background:linear-gradient(180deg,#fff,#e9ebf5); box-shadow: 0 2px 6px rgba(0,0,0,.4), inset 0 1px 0 #fff; }
+.switch .track{ background:rgba(255,255,255,.14); box-shadow: inset 0 1px 2px rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.1); }
+.switch input:checked + .track{ background:color-mix(in srgb, var(--primary) 90%, #000); box-shadow: inset 0 1px 2px rgba(0,0,0,.2); }
+.switch .knob{ background:#eef0f7; box-shadow: 0 2px 5px rgba(0,0,0,.35); }
 
 /* плитки выбора, меню, модальные окна, тост */
-.bg-opt, .music-opt{ background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.14); border-radius:16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); transition:transform .18s, border-color .2s, box-shadow .2s; }
+.bg-opt, .music-opt{ background:rgba(255,255,255,.05); border:1.5px solid rgba(255,255,255,.11); border-radius:16px; box-shadow:none; transition:transform .18s, border-color .2s, box-shadow .2s; }
 .bg-opt:hover, .music-opt:hover{ transform:translateY(-2px); }
-.bg-opt.selected, .music-opt.selected{ border-color:color-mix(in srgb, var(--primary) 75%, white 25%); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent), 0 8px 20px -8px color-mix(in srgb, var(--primary) 60%, transparent); }
-.user-menu{ background-color:color-mix(in srgb, var(--surface) 38%, transparent); border-radius:22px; -webkit-backdrop-filter:blur(32px) saturate(200%); backdrop-filter:blur(32px) saturate(200%); }
+.bg-opt.selected, .music-opt.selected{ border-color:color-mix(in srgb, var(--primary) 70%, white 30%); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+.user-menu{ background-color:color-mix(in srgb, var(--surface) 72%, transparent); border-radius:22px; -webkit-backdrop-filter:blur(26px) saturate(130%); backdrop-filter:blur(26px) saturate(130%); }
 .um-item{ border-radius:14px; transition:background .15s; }
-.um-item:hover{ background:rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
-.modal-backdrop{ background:rgba(8,10,20,.38); -webkit-backdrop-filter:blur(14px) saturate(140%); backdrop-filter:blur(14px) saturate(140%); }
-.modal{ border-radius:30px; background-color:color-mix(in srgb, var(--surface) 46%, transparent); }
-.modal-close{ color:var(--text); background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.22); box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
+.um-item:hover{ background:rgba(255,255,255,.09); }
+.modal-backdrop{ background:rgba(8,10,20,.5); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+.modal{ border-radius:30px; background-color:color-mix(in srgb, var(--surface) 74%, transparent); }
+.modal-close{ color:var(--text); background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.14); box-shadow:none; }
 .toast{ border-radius:999px; }
-.site-banner{ box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 6px 18px -8px rgba(240,180,40,.7); }
 .preview-card{ border-radius:32px; }
 
 /* мобильные: меньше блюра ради производительности */
-@media (max-width:760px){ :root{ --lg-blur:18px; --lg-sat:170%; } .modal{ border-radius:26px; } }
+@media (max-width:760px){ :root{ --lg-blur:16px; } .modal{ border-radius:26px; } }
 /* без поддержки blur или при «уменьшить прозрачность» — плотнее и без размытия */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .glass, .user-menu, .modal{ background-color:color-mix(in srgb, var(--surface) 92%, transparent); }
+  .glass, .user-menu, .modal{ background-color:color-mix(in srgb, var(--surface) 94%, transparent); }
 }
 @media (prefers-reduced-transparency:reduce){
-  .glass, .user-menu, .modal{ background-color:color-mix(in srgb, var(--surface) 94%, transparent); -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .glass, .user-menu, .modal{ background-color:color-mix(in srgb, var(--surface) 95%, transparent); -webkit-backdrop-filter:none; backdrop-filter:none; }
 }
 
 /* ---- скачивание приложений ---- */
@@ -1041,6 +1040,20 @@ button.arch-badge:disabled{cursor:default; opacity:.45;}
     <h3>📊 Админ-панель</h3>
     <p class="sub">Сводка по сайту. Модерация заявок остаётся в Telegram-боте.</p>
     <div id="adminBody"><div class="user-search-hint">Загрузка…</div></div>
+    <details class="apk-up" style="margin-top:16px;">
+      <summary style="cursor:pointer; font-weight:700;">📦 Загрузить APK</summary>
+      <div class="field" style="margin-top:10px;"><label>Приложение</label><select id="apkApp"></select></div>
+      <div class="field"><label>Версия</label><input type="text" id="apkVer" maxlength="40" placeholder="например, 0.118.0"></div>
+      <div class="field"><label>Архитектура</label>
+        <select id="apkArch"><option value="universal">Universal</option><option value="arm64-v8a">arm64-v8a</option><option value="armeabi-v7a">armeabi-v7a</option><option value="x86_64">x86_64</option><option value="x86">x86</option></select></div>
+      <div class="field"><label>Файл APK</label><input type="file" id="apkFile" accept=".apk,application/vnd.android.package-archive"></div>
+      <div class="field"><label>Что нового (необязательно)</label><textarea id="apkLog" rows="2" maxlength="2000"></textarea></div>
+      <div class="user-search-hint">Файл будет лежать здесь: <code id="apkPathHint" style="word-break:break-all;"></code></div>
+      <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" id="apkUpload" type="button">Загрузить</button>
+        <span class="user-search-hint" id="apkStatus" style="margin:0;"></span>
+      </div>
+    </details>
     <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
       <button class="btn btn-ghost btn-sm" type="button" id="adminRefresh">↻ Обновить</button>
       <button class="btn btn-ghost btn-sm" type="button" id="adminToRoles">🛡 Управление ролями</button>
@@ -1094,6 +1107,7 @@ async function loadCatalogFromSupabase(){
   const base = 'id, name, author, description, category, icon, rating, github_url, apk_url, status, added_by';
   // от полного набора колонок к базовому: миграции 6 (icon_url) и 10 (скачивания) могут быть ещё не применены
   const colSets = [
+    `${base}, slug, icon_url, downloads, app_versions(version, architectures, created_at, apk_url, arch_urls, arch_meta, size_bytes, sha256, changelog, downloads)`,
     `${base}, icon_url, downloads, app_versions(version, architectures, created_at, apk_url, arch_urls, size_bytes, sha256, changelog, downloads)`,
     `${base}, icon_url, app_versions(version, architectures, created_at)`,
     `${base}, app_versions(version, architectures, created_at)`,
@@ -1101,7 +1115,7 @@ async function loadCatalogFromSupabase(){
   let data = null, error = null;
   for(const cols of colSets){
     ({ data, error } = await sbClient.from('apps').select(cols).eq('status', 'approved').order('created_at', { ascending: true }));
-    if(!error || !/column|does not exist|schema cache|icon_url|downloads|arch_urls|size_bytes|sha256|changelog/i.test(error.message || '')) break;
+    if(!error || !/column|does not exist|schema cache|icon_url|slug|downloads|arch_urls|arch_meta|size_bytes|sha256|changelog/i.test(error.message || '')) break;
   }
 
   if(error){
@@ -1117,10 +1131,11 @@ async function loadCatalogFromSupabase(){
       .sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)) // новая версия первой в списке
       .forEach(v => {
         versions[v.version] = v.architectures || [];
-        vmeta[v.version] = { size: v.size_bytes || null, sha: /^[a-f0-9]{64}$/i.test(v.sha256 || '') ? v.sha256.toLowerCase() : null, changelog: v.changelog || '', downloads: v.downloads || 0, archUrls: v.arch_urls || {}, url: v.apk_url || null };
+        vmeta[v.version] = { size: v.size_bytes || null, sha: /^[a-f0-9]{64}$/i.test(v.sha256 || '') ? v.sha256.toLowerCase() : null, changelog: v.changelog || '', downloads: v.downloads || 0, archUrls: v.arch_urls || {}, archMeta: v.arch_meta || {}, url: v.apk_url || null };
       });
     return {
       id: row.id,
+      slug: row.slug || null,
       icon: row.icon || '📦',
       iconUrl: row.icon_url || null,
       name: row.name,
@@ -1203,20 +1218,26 @@ document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click'
 /* ===================== ANDROID CATALOG ===================== */
 function fmtSize(n){ return n ? (n >= 1048576 ? (n/1048576).toFixed(1) + ' ' + tr('МБ') : Math.max(1, Math.round(n/1024)) + ' ' + tr('КБ')) : ''; }
 function pickArch(avail, prefer){ return avail.includes(prefer) ? prefer : (avail.includes('universal') ? 'universal' : (avail.includes('arm64-v8a') ? 'arm64-v8a' : (avail[0] || ''))); }
+/* размер и хеш: сначала данные именно выбранной архитектуры, иначе общие данные версии */
+function metaFor(app, version, arch){
+  const m = app.vmeta[version] || {}, am = (m.archMeta || {})[arch] || {};
+  const okSha = v => /^[a-f0-9]{64}$/i.test(v || '') ? v.toLowerCase() : null;
+  return { size: am.size || m.size || null, sha: okSha(am.sha256) || m.sha || null };
+}
 function dlInfoHtml(app, version, arch){
-  const m = app.vmeta[version] || {};
+  const m = app.vmeta[version] || {}, mf = metaFor(app, version, arch);
   const parts = [];
   const total = m.downloads || app.downloads || 0;
   if(total) parts.push(`<span>⬇ ${total}</span>`);
-  if(m.size) parts.push(`<span>${escapeHtml(fmtSize(m.size))}</span>`);
-  if(m.sha) parts.push(`<button type="button" class="sha" data-sha="${m.sha}" title="Контрольная сумма SHA-256 — нажмите, чтобы скопировать">SHA-256 ${m.sha.slice(0,8)}…${m.sha.slice(-6)}</button>`);
+  if(mf.size) parts.push(`<span>${escapeHtml(fmtSize(mf.size))}</span>`);
+  if(mf.sha) parts.push(`<button type="button" class="sha" data-sha="${mf.sha}" title="Контрольная сумма SHA-256 — нажмите, чтобы скопировать">SHA-256 ${mf.sha.slice(0,8)}…${mf.sha.slice(-6)}</button>`);
   if(m.changelog) parts.push(`<details><summary>Что нового</summary><div class="chlog">${escapeHtml(m.changelog)}</div></details>`);
   return parts.join('');
 }
 function androidCardHTML(app){
   const versionKeys = Object.keys(app.versions);
   const v0 = versionKeys[0], archsForV = availArchs(app, v0), pick = pickArch(archsForV, 'universal');
-  const m = app.vmeta[v0] || {};
+  const m = metaFor(app, v0, pick);
   const vt = m.sha ? `https://www.virustotal.com/gui/file/${m.sha}` : `https://www.virustotal.com/gui/search/${encodeURIComponent(app.name)}`;
   return `<div class="android-card card glass" data-app="${app.id}" data-arch="${pick}">
     <div class="android-row">
@@ -1249,7 +1270,7 @@ function refreshAppCard(card){
     const on = avail.includes(b.dataset.arch);
     b.classList.toggle('on', on); b.disabled = !on; b.classList.toggle('sel', on && b.dataset.arch === card.dataset.arch);
   });
-  const m = app.vmeta[version] || {};
+  const m = metaFor(app, version, card.dataset.arch);
   card.querySelector('.vt-link').href = m.sha ? `https://www.virustotal.com/gui/file/${m.sha}` : `https://www.virustotal.com/gui/search/${encodeURIComponent(app.name)}`;
   card.querySelector('.dl-info').innerHTML = dlInfoHtml(app, version, card.dataset.arch);
   bindShaCopy(card);
@@ -2677,6 +2698,22 @@ const I18N_EN = {
 "Выберите архитектуру": "Choose an architecture",
 "Скачивание началось": "Download started",
 "скачиваний": "downloads",
+"📦 Загрузить APK": "📦 Upload APK",
+"Файл APK": "APK file",
+"Что нового (необязательно)": "What’s new (optional)",
+"Загрузить": "Upload",
+"Версия": "Version",
+"например, 0.118.0": "e.g. 0.118.0",
+"Считаем контрольную сумму…": "Calculating checksum…",
+"Готовим загрузку…": "Preparing upload…",
+"Загружаем файл…": "Uploading file…",
+"Записываем версию…": "Saving version…",
+"Версия загружена": "Version uploaded",
+"Выберите файл APK": "Choose an APK file",
+"Укажите версию": "Enter a version",
+"Выберите приложение": "Choose an app",
+"Файл будет лежать здесь:": "The file will be stored at:",
+"Если путь пустой — выполните миграцию 11 (у приложения должен появиться slug).": "If the path is empty, run migration 11 (the app needs a slug).",
 "⭐ Поддержать AppMint": "⭐ Support AppMint",
 "🏆 Топ донатеров": "🏆 Top donors",
 "💎 VIP за донат:": "💎 VIP for donating:",
@@ -3412,7 +3449,61 @@ async function loadAdminOverview(){
     body.innerHTML = `<div class="user-search-hint">⚠️ ${escapeHtml(e.message || String(e))}</div>`;
   }
 }
-function openAdminPanel(){ if(!canManageRoles()) return; openModal('adminBackdrop'); loadAdminOverview(); }
+/* ---- загрузка APK: <slug>/<версия>/<архитектура>/<slug>-<версия>-<архитектура>.apk в бакете apks ---- */
+function apkPathPreview(){
+  const app = androidApps.find(a=>String(a.id) === document.getElementById('apkApp').value);
+  const ver = document.getElementById('apkVer').value.trim(), arch = document.getElementById('apkArch').value;
+  const el = document.getElementById('apkPathHint');
+  el.textContent = (app && app.slug && ver) ? `apks/${app.slug}/${ver}/${arch}/${app.slug}-${ver}-${arch}.apk` : '';
+}
+function fillApkForm(){
+  const sel = document.getElementById('apkApp'), keep = sel.value;
+  sel.innerHTML = androidApps.map(a=>`<option value="${escapeHtml(String(a.id))}">${escapeHtml(a.name)}${a.slug ? '' : ' ⚠'}</option>`).join('');
+  if(keep) sel.value = keep;
+  apkPathPreview();
+}
+async function sha256Hex(file){
+  const buf = await file.arrayBuffer();
+  const h = await crypto.subtle.digest('SHA-256', buf);
+  return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function adminPost(path, payload){
+  const { data } = await sbClient.auth.getSession();
+  const token = data?.session?.access_token;
+  if(!token) throw new Error('Войдите в аккаунт заново');
+  const res = await fetch(REPORT_ENDPOINT + path, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ access_token: token, ...payload }) });
+  const out = await res.json().catch(()=>({}));
+  if(!res.ok || !out.ok) throw new Error(out.message || 'Ошибка сервера');
+  return out;
+}
+['apkApp','apkVer','apkArch'].forEach(id=>document.getElementById(id).addEventListener('input', apkPathPreview));
+document.getElementById('apkUpload').addEventListener('click', async ()=>{
+  const status = document.getElementById('apkStatus'), btn = document.getElementById('apkUpload');
+  const appId = document.getElementById('apkApp').value, version = document.getElementById('apkVer').value.trim();
+  const arch = document.getElementById('apkArch').value, file = document.getElementById('apkFile').files[0];
+  if(!appId){ status.textContent = tr('Выберите приложение'); return; }
+  if(!version){ status.textContent = tr('Укажите версию'); return; }
+  if(!file){ status.textContent = tr('Выберите файл APK'); return; }
+  btn.disabled = true;
+  try{
+    status.textContent = tr('Считаем контрольную сумму…');
+    const sha256 = await sha256Hex(file);
+    status.textContent = tr('Готовим загрузку…');
+    const init = await adminPost('/admin/apk-init', { app_id: appId, version, arch });
+    status.textContent = tr('Загружаем файл…');
+    const up = await sbClient.storage.from(init.bucket).uploadToSignedUrl(init.path, init.token, file, { contentType: 'application/vnd.android.package-archive' });
+    if(up.error) throw new Error(up.error.message || 'Не удалось загрузить файл');
+    status.textContent = tr('Записываем версию…');
+    await adminPost('/admin/apk-commit', { app_id: appId, version, arch, sha256, changelog: document.getElementById('apkLog').value.trim() });
+    status.textContent = '✓ ' + tr('Версия загружена');
+    showToast('Версия загружена');
+    document.getElementById('apkFile').value = '';
+    await loadCatalogFromSupabase(); fillApkForm();
+  }catch(e){
+    status.textContent = '⚠️ ' + (e.message || e);
+  }finally{ btn.disabled = false; }
+});
+function openAdminPanel(){ if(!canManageRoles()) return; openModal('adminBackdrop'); loadAdminOverview(); fillApkForm(); }
 document.getElementById('umAdmin').addEventListener('click', ()=>{ closeUserMenu(); openAdminPanel(); });
 document.getElementById('adminRefresh').addEventListener('click', loadAdminOverview);
 document.getElementById('adminToRoles').addEventListener('click', ()=>{ closeModal('adminBackdrop'); openRolesModal(); });
